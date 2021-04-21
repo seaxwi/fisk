@@ -1,4 +1,4 @@
-package com.example.fisk;
+package com.atis.fisk;
 
 import org.junit.Test;
 

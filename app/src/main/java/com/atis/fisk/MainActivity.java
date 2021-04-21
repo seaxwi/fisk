@@ -1,4 +1,4 @@
-package com.example.fisk;
+package com.atis.fisk;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;

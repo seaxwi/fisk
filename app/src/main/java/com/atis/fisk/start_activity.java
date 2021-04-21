@@ -1,6 +1,5 @@
-package com.example.fisk;
+package com.atis.fisk;
 
-import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.animation.Animation;
@@ -9,9 +8,6 @@ import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.TextView;
 
 public class start_activity extends AppCompatActivity {
     ImageView image;
