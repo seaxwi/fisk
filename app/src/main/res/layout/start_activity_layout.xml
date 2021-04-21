@@ -6,4 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".start_activity">
 
+
+
 </android.support.constraint.ConstraintLayout>
