@@ -1,5 +1,6 @@
 package com.atis.fisk;
 
+import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -7,6 +8,10 @@ import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Build;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 
@@ -14,6 +19,8 @@ public class fishing extends AppCompatActivity implements SensorEventListener {
 
     private SensorManager mSensorManager;
     private TextView sensorText;
+    private ImageView start_waves;
+    private AnimationDrawable waves;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +29,10 @@ public class fishing extends AppCompatActivity implements SensorEventListener {
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorText = (TextView) findViewById(R.id.sensortext);
+        start_waves = (ImageView) findViewById(R.id.start_waves);
+        start_waves.setBackgroundResource(R.drawable.waves);
+        waves = (AnimationDrawable) start_waves.getBackground();
+        waves.start();
 
 
     }
@@ -40,6 +51,7 @@ public class fishing extends AppCompatActivity implements SensorEventListener {
 
         // to stop the listener and save battery
         mSensorManager.unregisterListener(this);
+        waves.stop();
     }
 
     @Override
@@ -53,6 +65,13 @@ public class fishing extends AppCompatActivity implements SensorEventListener {
         String zStr = String.format("%.1f", z);
 
         sensorText.setText("x:y:z =" + xStr + ": " + yStr + ": " + zStr);
+    }
+
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        waves.start();
     }
 
     @Override
