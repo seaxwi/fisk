@@ -15,8 +15,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     private SensorManager mSensorManager;
     private TextView sensorText;
-    private ImageView start_waves;
-    private AnimationDrawable waves;
+    private ImageView backgroundView;
+    private AnimationDrawable wavesAnimation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,12 +25,17 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorText = (TextView) findViewById(R.id.acceleration_values);
-        start_waves = (ImageView) findViewById(R.id.start_waves);
-        start_waves.setBackgroundResource(R.drawable.waves);
-        waves = (AnimationDrawable) start_waves.getBackground();
-        waves.start();
+        backgroundView = (ImageView) findViewById(R.id.start_waves);
 
+        // Prepare animation
+        backgroundView.setBackgroundResource(R.drawable.waves);
+        wavesAnimation = (AnimationDrawable) backgroundView.getBackground();
 
+        // Remove placeholder background
+        backgroundView.setImageDrawable(null);
+
+        // Start animation
+        wavesAnimation.start();
     }
 
     @Override
@@ -47,7 +52,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // to stop the listener and save battery
         mSensorManager.unregisterListener(this);
-        waves.stop();
+        wavesAnimation.stop();
     }
 
     @Override
@@ -65,7 +70,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        waves.start();
+        wavesAnimation.start();
     }
 
     @Override
