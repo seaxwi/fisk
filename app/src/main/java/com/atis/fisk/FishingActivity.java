@@ -7,10 +7,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.os.Build;
-import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -28,7 +24,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         setContentView(R.layout.activity_fishing);
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        sensorText = (TextView) findViewById(R.id.sensortext);
+        sensorText = (TextView) findViewById(R.id.acceleration_values);
         start_waves = (ImageView) findViewById(R.id.start_waves);
         start_waves.setBackgroundResource(R.drawable.waves);
         waves = (AnimationDrawable) start_waves.getBackground();
@@ -60,11 +56,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         float y = event.values[1];
         float z = event.values[2];
 
-        String xStr = String.format("%.1f", x);
-        String yStr = String.format("%.1f", y);
-        String zStr = String.format("%.1f", z);
-
-        sensorText.setText("x:y:z =" + xStr + ": " + yStr + ": " + zStr);
+        sensorText.setText(
+                getString(R.string.acceleration_xyz, x, y, z)
+        );
     }
 
 
