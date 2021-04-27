@@ -9,14 +9,14 @@ import android.widget.ImageView;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 
-public class start_activity extends AppCompatActivity {
+public class StartActivity extends AppCompatActivity {
     ImageView image;
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.start_activity_layout);
+        setContentView(R.layout.activity_start);
 
         image = findViewById(R.id.imageView3);
 

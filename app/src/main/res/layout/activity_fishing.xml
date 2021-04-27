@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#E1ECF8"
     app:layoutDescription="@xml/activity_fishing_scene"
-    tools:context=".fishing" >
+    tools:context=".FishingActivity" >
 
     <TextView
         android:id="@+id/sensortext"

@@ -15,7 +15,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 
-public class fishing extends AppCompatActivity implements SensorEventListener {
+public class FishingActivity extends AppCompatActivity implements SensorEventListener {
 
     private SensorManager mSensorManager;
     private TextView sensorText;

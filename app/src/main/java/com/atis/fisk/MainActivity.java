@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void clickedStart (View view){
-        Intent intent = new Intent (this , fishing.class);
+        Intent intent = new Intent (this , FishingActivity.class);
         startActivity(intent);
 
     }
