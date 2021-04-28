@@ -6,8 +6,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#E1ECF8"
+    android:onClick="throwLine"
     app:layoutDescription="@xml/activity_fishing_scene"
     tools:context=".FishingActivity">
+
+    <Button
+        android:id="@+id/btn_throw_line"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:onClick="throwLine"
+        android:text="@string/throw_line"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
         android:id="@+id/start_waves"
@@ -31,5 +44,29 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/fish_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/throw_line_to_start"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/catch_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toEndOf="@+id/fish_result"
+        app:layout_constraintStart_toStartOf="@+id/fish_result"
+        app:layout_constraintTop_toBottomOf="@+id/fish_result" />
 
 </android.support.constraint.ConstraintLayout>

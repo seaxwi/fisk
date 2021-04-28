@@ -7,8 +7,11 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.util.Random;
 
 
 public class FishingActivity extends AppCompatActivity implements SensorEventListener {
@@ -16,7 +19,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private SensorManager mSensorManager;
     private TextView sensorText;
     private ImageView backgroundView;
+    private TextView fishResultView;
+    private TextView catchCountView;
     private AnimationDrawable wavesAnimation;
+    private Random rd;
+    private int nCaught = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +32,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorText = (TextView) findViewById(R.id.acceleration_values);
+        rd = new Random();
+
         backgroundView = (ImageView) findViewById(R.id.start_waves);
+        fishResultView = (TextView) findViewById(R.id.fish_result);
+        catchCountView= (TextView) findViewById(R.id.catch_count);
+
 
         // Prepare animation
         backgroundView.setBackgroundResource(R.drawable.waves);
@@ -78,4 +90,18 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // not in use
     }
 
+    public void throwLine(View view){
+
+        // Simple placeholder
+        if(rd.nextBoolean()) {
+            nCaught++;
+            fishResultView.setText(R.string.fish_was_caught);
+            catchCountView.setText(
+                    getString(R.string.catch_count, nCaught)
+            );
+
+        } else {
+            fishResultView.setText(R.string.fish_got_away);
+        }
+    }
 }
