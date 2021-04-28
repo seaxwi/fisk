@@ -1,5 +1,6 @@
 package com.atis.fisk;
 
+import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -17,6 +18,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private TextView sensorText;
     private ImageView start_waves;
     private AnimationDrawable waves;
+    private Intent intent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +32,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         waves = (AnimationDrawable) start_waves.getBackground();
         waves.start();
 
+        intent = new Intent(this, BackgroundSoundService.class);
+        startService(intent);
 
     }
 
@@ -38,7 +42,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         super.onResume();
 
         // for the system's orientation sensor registered listeners
-        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_GAME);
     }
 
     @Override
@@ -48,6 +52,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // to stop the listener and save battery
         mSensorManager.unregisterListener(this);
         waves.stop();
+        stopService(intent);
     }
 
     @Override
