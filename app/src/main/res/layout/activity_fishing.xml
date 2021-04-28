@@ -6,21 +6,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#E1ECF8"
-    android:onClick="throwLine"
+    android:onClick="cast"
     app:layoutDescription="@xml/activity_fishing_scene"
     tools:context=".FishingActivity">
-
-    <Button
-        android:id="@+id/btn_throw_line"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:onClick="throwLine"
-        android:text="@string/btn_cast"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
         android:id="@+id/start_waves"
@@ -34,16 +22,57 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/waves1" />
 
-    <TextView
-        android:id="@+id/acceleration_values"
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/debug_values"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
         android:layout_marginTop="16dp"
-        android:text="@string/initializing_message"
+        android:background="#BFFFFFFF"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/btn_reset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:onClick="resetHighestAccs"
+            android:text="@string/reset"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/acc_values_total" />
+
+        <TextView
+            android:id="@+id/acc_values_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/initializing_message"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/acc_values_xyz" />
+
+        <TextView
+            android:id="@+id/acc_values_xyz"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/initializing_message"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </android.support.constraint.ConstraintLayout>
+
+    <Button
+        android:id="@+id/btn_cast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:onClick="cast"
+        android:text="@string/btn_cast"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/fish_result"
@@ -68,5 +97,17 @@
         app:layout_constraintEnd_toEndOf="@+id/fish_result"
         app:layout_constraintStart_toStartOf="@+id/fish_result"
         app:layout_constraintTop_toBottomOf="@+id/fish_result" />
+
+    <ImageButton
+        android:id="@+id/imageButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:onClick="toggleDebug"
+        android:src="@android:drawable/ic_menu_info_details"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

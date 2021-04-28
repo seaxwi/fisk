@@ -10,7 +10,8 @@
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
 
-    <string name="acceleration_xyz">Acc (x, y, z): %1$.2f, %2$.2f, %3$.2f m/s^2</string>
+    <string name="acceleration_xyz">Top acceleration [xzy] (m/s^2)\nx: %1$.2f, y: %2$.2f, z: %3$.2f</string>
+    <string name="acceleration_total">Top acceleration [total] (m/s^2)\n%1$.2f (x: %2$.2f, y: %3$.2f, z: %4$.2f)</string>
     <string name="initializing_message">Initializing...</string>
     <string name="go_fish">START FISHING</string>
     <string name="view_catch">VIEW CATCH</string>
@@ -19,4 +20,5 @@
     <string name="catch_count">Total: %1$o</string>
     <string name="fish_was_caught">Nice catch!</string>
     <string name="fish_got_away">Fish got away!</string>
+    <string name="reset">reset</string>
 </resources>
