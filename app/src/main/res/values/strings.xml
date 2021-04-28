@@ -14,8 +14,8 @@
     <string name="initializing_message">Initializing...</string>
     <string name="go_fish">START FISHING</string>
     <string name="view_catch">VIEW CATCH</string>
-    <string name="throw_line">THROW LINE</string>
-    <string name="throw_line_to_start">Throw line to start</string>
+    <string name="btn_cast">CAST</string>
+    <string name="cast_line_to_start">Cast your line to start</string>
     <string name="catch_count">Total catch: %1$o</string>
     <string name="fish_was_caught">Nice catch!</string>
     <string name="fish_got_away">Fish got away!</string>
