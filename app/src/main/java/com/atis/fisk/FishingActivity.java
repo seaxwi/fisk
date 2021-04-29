@@ -29,7 +29,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     // sensor stuff
     private SensorManager sensorManager;
-    private Sensor sensor;
+    private Sensor linearAccelerationSensor;
+    private Sensor rotationVectorSensor;
+
     private Vibrator vibrator;
 
     // Views
@@ -39,6 +41,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private ImageView backgroundView;
     private TextView fishResultView;
     private TextView catchCountView;
+    private TextView rotationView;
     private AnimationDrawable wavesAnimation;
 
     // Other
@@ -47,6 +50,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Sensor Arrays
     private float[] gravity;
     private float[] linear_acceleration;
+    private float[] rotation_vector;
+    private float[] top_rotation_vector;
 
     // Values
     private int nCaught = 0;
@@ -57,6 +62,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     float highestXAcc = 0;
     float highestYAcc = 0;
     float highestZAcc = 0;
+    float highestXRot = 0;
 
 
 
@@ -69,19 +75,22 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         /* Setup sensor */
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        // sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        linearAccelerationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);;
+        rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
         // Wait for sensor to calibrate or something
         SystemClock.sleep(100);
 
         xzyDebug = (TextView) findViewById(R.id.acc_values_xyz);
         totalDebug = (TextView) findViewById(R.id.acc_values_total);
+        rotationView = (TextView) findViewById(R.id.rotation_value);
         rd = new Random();
 
         /* Declare arrays */
         gravity = new float[3];
         linear_acceleration = new float[3];
+        rotation_vector = new float[4];
+        top_rotation_vector = new float[3];
 
         backgroundView = (ImageView) findViewById(R.id.start_waves);
         fishResultView = (TextView) findViewById(R.id.fish_result);
@@ -109,7 +118,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         super.onResume();
 
         // for the system's orientation sensor registered listeners
-        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, linearAccelerationSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -128,11 +138,34 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        // Update values
-        try {
-            updateSensorValues(event);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
+            // Update values
+            try {
+                updateAccelerationValues(event);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            updateRotationValues(event);
+            if(Math.abs(rotation_vector[0]) > Math.abs(top_rotation_vector[0])) {
+                top_rotation_vector[0] = rotation_vector[0];
+            }
+            if(Math.abs(rotation_vector[1]) > Math.abs(top_rotation_vector[1])) {
+                top_rotation_vector[1] = rotation_vector[1];
+            }
+            if(Math.abs(rotation_vector[2]) > Math.abs(top_rotation_vector[2])) {
+                top_rotation_vector[2] = rotation_vector[2];
+            }
+            rotationView.setText(
+                    getString(R.string.rotations,
+                            Math.toDegrees(rotation_vector[0]),
+                            Math.toDegrees(rotation_vector[1]),
+                            Math.toDegrees(rotation_vector[2]),
+                            Math.toDegrees(top_rotation_vector[0]),
+                            Math.toDegrees(top_rotation_vector[1]),
+                            Math.toDegrees(top_rotation_vector[2])
+                    )
+            );
         }
 
         boolean change = false;
@@ -190,9 +223,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // not in use
     }
 
-    private void updateSensorValues(SensorEvent event) throws Exception {
+    private void updateAccelerationValues(SensorEvent event) throws Exception {
 
-        int sensorType = sensor.getType();
+        int sensorType = linearAccelerationSensor.getType();
 
         if(sensorType == Sensor.TYPE_ACCELEROMETER) {
             // https://developer.android.com/guide/topics/sensors/sensors_motion#sensors-motion-accel
@@ -226,6 +259,13 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         );
     }
 
+    private void updateRotationValues(SensorEvent event) {
+        rotation_vector[0] = event.values[0];
+        rotation_vector[1] = event.values[1];
+        rotation_vector[2] = event.values[2];
+        rotation_vector[3] = event.values[3];
+    }
+
     public void cast(View view){
 
         // Simple placeholder
@@ -246,6 +286,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         highestYAcc = 0;
         highestZAcc = 0;
         highestTotAcc = 0;
+        highestXRot = 0;
+
     }
 
     public void toggleDebug(View view) {

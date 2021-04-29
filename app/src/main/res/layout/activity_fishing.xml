@@ -32,7 +32,8 @@
         android:background="#BFFFFFFF"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
 
         <Button
             android:id="@+id/btn_reset"
@@ -42,7 +43,7 @@
             android:onClick="resetHighestAccs"
             android:text="@string/reset"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/acc_values_total" />
+            app:layout_constraintTop_toBottomOf="@+id/rotation_value" />
 
         <TextView
             android:id="@+id/acc_values_total"
@@ -52,6 +53,15 @@
             android:text="@string/initializing_message"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/acc_values_xyz" />
+
+        <TextView
+            android:id="@+id/rotation_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/initializing_message"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/acc_values_total" />
 
         <TextView
             android:id="@+id/acc_values_xyz"
