@@ -12,6 +12,7 @@ import android.os.Vibrator;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -50,8 +51,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Sensor Arrays
     private float[] gravity;
     private float[] linear_acceleration;
-    private float[] rotation_vector;
-    private float[] top_rotation_vector;
+    private double[] rotation_vector;
+    private double[] top_rotation_vector;
 
     // Values
     private int nCaught = 0;
@@ -63,6 +64,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     float highestYAcc = 0;
     float highestZAcc = 0;
     float highestXRot = 0;
+    double angle = 0;
 
 
 
@@ -89,8 +91,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         /* Declare arrays */
         gravity = new float[3];
         linear_acceleration = new float[3];
-        rotation_vector = new float[4];
-        top_rotation_vector = new float[3];
+        rotation_vector = new double[3];
+        top_rotation_vector = new double[3];
 
         backgroundView = (ImageView) findViewById(R.id.start_waves);
         fishResultView = (TextView) findViewById(R.id.fish_result);
@@ -206,7 +208,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                 lastVibration = currTime;
                 //deprecated in API 26 (!)
-                vibrator.vibrate(500);
+                // vibrator.vibrate(500);
             }
         }
     }
@@ -249,6 +251,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             linear_acceleration[0] = event.values[0];
             linear_acceleration[1] = event.values[1];
             linear_acceleration[2] = event.values[2];
+
+            float aX = event.values[0];
+            float aY = event.values[1];
+            //aZ = event.values[2];
+            angle = Math.atan2(aX, aY)/(Math.PI/180);
         } else {
             throw new Exception("Error: Wrong sensor type");
         }
@@ -260,10 +267,21 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     private void updateRotationValues(SensorEvent event) {
-        rotation_vector[0] = event.values[0];
-        rotation_vector[1] = event.values[1];
-        rotation_vector[2] = event.values[2];
-        rotation_vector[3] = event.values[3];
+        // https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/indexLocal.htm
+
+        float qx = event.values[0];
+        float qy = event.values[1];
+        float qz = event.values[2];
+        float qw = event.values[3];
+
+        double sqw = qw*qw;
+        double sqx = qx*qx;
+        double sqy = qy*qy;
+        double sqz = qz*qz;
+
+        rotation_vector[0] = Math.atan2(2.0 * (qx*qy + qz*qw),(sqx - sqy - sqz + sqw));
+        rotation_vector[1] = Math.atan2(2.0 * (qy*qz + qx*qw),(-sqx - sqy + sqz + sqw));
+        rotation_vector[2] = Math.asin(-2.0 * (qx*qz - qy*qw));
     }
 
     public void cast(View view){
@@ -287,7 +305,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         highestZAcc = 0;
         highestTotAcc = 0;
         highestXRot = 0;
-
+        top_rotation_vector[0] = 0;
+        top_rotation_vector[1] = 0;
+        top_rotation_vector[2] = 0;
     }
 
     public void toggleDebug(View view) {
@@ -295,8 +315,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         if(debug) {
             debugLayout.setVisibility(View.VISIBLE);
+
+            fishResultView.setVisibility(View.GONE);
+            catchCountView.setVisibility(View.GONE);
+            backgroundView.setVisibility(View.GONE);
         } else {
             debugLayout.setVisibility(View.GONE);
+
+            fishResultView.setVisibility(View.VISIBLE);
+            catchCountView.setVisibility(View.VISIBLE);
+            backgroundView.setVisibility(View.VISIBLE);
         }
     }
 }
