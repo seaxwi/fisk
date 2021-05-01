@@ -32,6 +32,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private Sensor linearAccelerationSensor;
     private Sensor rotationVectorSensor;
 
+    // Vibrator
     private Vibrator vibrator;
 
     // Views
@@ -56,15 +57,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     // Values
     private int nCaught = 0;
-    boolean vBlock = false;
-    long lastVibration = 0;
-    double totAcc = 0;
-    double highestTotAcc = 0;
-    float highestXAcc = 0;
-    float highestYAcc = 0;
-    float highestZAcc = 0;
-    float highestXRot = 0;
-    double angle = 0;
 
 
 
@@ -152,17 +144,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (debug) {
                 updateRotationViews();
             }
-        }
-
-        // Debug: Vibrate unless there was a recent vibration
-        long currTime = System.currentTimeMillis();
-        if(debug && currTime > lastVibration + 1000) {
-            lastVibration = currTime;
-            // sensorText.setText("cool!");
-
-            lastVibration = currTime;
-            //deprecated in API 26 (!)
-            // vibrator.vibrate(500);
         }
     }
 
