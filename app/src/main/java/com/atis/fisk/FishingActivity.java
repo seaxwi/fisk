@@ -53,7 +53,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double[] top_accelerations_split;
     private double[] top_accelerations_total;
     private double[] rotations;
-    private double[] top_rotations;
 
     // Values
     private int nCaught = 0;
@@ -85,7 +84,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         top_accelerations_split = new double[4];
         top_accelerations_total = new double[4];
         rotations = new double[3];
-        top_rotations = new double[3];
 
         backgroundView = (ImageView) findViewById(R.id.start_waves);
         fishResultView = (TextView) findViewById(R.id.fish_result);
@@ -172,10 +170,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 getString(R.string.rotations,
                         Math.toDegrees(rotations[0]),
                         Math.toDegrees(rotations[1]),
-                        Math.toDegrees(rotations[2]),
-                        Math.toDegrees(top_rotations[0]),
-                        Math.toDegrees(top_rotations[1]),
-                        Math.toDegrees(top_rotations[2])
+                        Math.toDegrees(rotations[2])
                 )
         );
     }
@@ -236,13 +231,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         rotations[0] = Math.atan2(2.0 * (qx*qy + qz*qw),(sqx - sqy - sqz + sqw));
         rotations[1] = Math.atan2(2.0 * (qy*qz + qx*qw),(-sqx - sqy + sqz + sqw));
         rotations[2] = Math.asin(-2.0 * (qx*qz - qy*qw));
-
-        // update top rotations
-        for(int i = 0; i < 3; i++) {
-            if(Math.abs(rotations[i]) > Math.abs(top_rotations[i])) {
-                top_rotations[i] = rotations[i];
-            }
-        }
     }
 
     public void cast(View view){
@@ -270,7 +258,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // reset rotations
         for(int i = 0; i<3; i++) {
             rotations[i] = 0;
-            top_rotations[i] = 0;
         }
     }
 

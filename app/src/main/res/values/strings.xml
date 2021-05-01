@@ -12,7 +12,7 @@
 
     <string name="acceleration_xyz">Top acceleration [xzy] (m/s^2)\nx: %1$.2f, y: %2$.2f, z: %3$.2f</string>
     <string name="acceleration_total">Top acceleration [total] (m/s^2)\n%1$.2f (x: %2$.2f, y: %3$.2f, z: %4$.2f)</string>
-    <string name="rotations">Current rotation\nx: %1$.1f, y: %2$.1f, z: %3$.1f\nTop rotation\nx: %4$.1f, y: %5$.1f, z: %6$.1f</string>
+    <string name="rotations">Current rotation\nx: %1$.1f, y: %2$.1f, z: %3$.1f</string>
     <string name="initializing_message">Initializing...</string>
     <string name="go_fish">START FISHING</string>
     <string name="view_catch">VIEW CATCH</string>
