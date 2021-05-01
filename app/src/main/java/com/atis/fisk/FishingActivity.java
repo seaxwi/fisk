@@ -1,5 +1,6 @@
 package com.atis.fisk;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
@@ -7,25 +8,41 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.Build;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.Arrays;
 import java.util.Random;
 
 
 public class FishingActivity extends AppCompatActivity implements SensorEventListener {
+    private static final String TAG = "FishingActivity";
+
+    private static int CAST_MODE_IDLE = 0;
+    private static int CAST_MODE_PRIMED = 1;
+    private static int CAST_MODE_CASTING = 2;
+    private static int CAST_MODE_AIRBORNE = 3;
+    private static int CAST_MODE_IN_WATER = 4;
+
+    // Sound
+    private SoundPool soundPool;
 
     // Mode
     boolean debug = false;
 
     // Intent
-    private Intent intent;
+    private Intent bgSoundintent;
 
     // sensor stuff
     private SensorManager sensorManager;
@@ -40,10 +57,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private TextView xzyDebug;
     private TextView totalDebug;
     private ImageView backgroundView;
-    private TextView fishResultView;
-    private TextView catchCountView;
+    private TextView lineLengthView;
     private TextView rotationView;
+    private TextView castModeView;
     private AnimationDrawable wavesAnimation;
+
+    // final MediaPlayer mp = MediaPlayer.create(this, R.raw.);
+    private AudioManager am;
+
 
     // Other
     private Random rd;
@@ -52,12 +73,21 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double[] linear_acceleration;
     private double[] top_accelerations_split;
     private double[] top_accelerations_total;
+    private double[] top_accelerations_cast;
     private double[] rotations;
 
-    // Values
-    private int nCaught = 0;
+    // Cast values
+    private int castMode = CAST_MODE_IDLE;
+    private double castPrimeThresholdAngle = Math.toRadians(45);
+    private double castPrimeThresholdAngleBuffer = Math.toRadians(10);
+    private double lineLength = 0;
 
-
+    // Sounds
+    int sound_swosh;
+    int sound_click;
+    int sound_splash_small;
+    int sound_splash_big;
+    int sound_splash_droplet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,28 +96,40 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         debugLayout = (ConstraintLayout) findViewById(R.id.debug_values);
 
+        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
         /* Setup sensor */
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        linearAccelerationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);;
+        linearAccelerationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
-        // Wait for sensor to calibrate or something
+        // Loud sounds (TODO: what about onResume?)
+        soundPool = createSoundPool();
+
+        sound_swosh = soundPool.load(getApplicationContext(), R.raw.megaswosh1, 1);
+        sound_click = soundPool.load(getApplicationContext(), R.raw.click, 1);
+        sound_splash_small = soundPool.load(getApplicationContext(), R.raw.splash1, 1);
+        sound_splash_big = soundPool.load(getApplicationContext(), R.raw.splash2, 1);
+        sound_splash_droplet = soundPool.load(getApplicationContext(), R.raw.droplet, 1);
+
+        // Wait for sensor to calibrate or something (TODO: Check if needed)
         SystemClock.sleep(100);
 
         xzyDebug = (TextView) findViewById(R.id.acc_values_xyz);
         totalDebug = (TextView) findViewById(R.id.acc_values_total);
         rotationView = (TextView) findViewById(R.id.rotation_value);
+        castModeView = (TextView) findViewById(R.id.cast_mode);
         rd = new Random();
 
         /* Declare arrays */
         linear_acceleration = new double[4];
         top_accelerations_split = new double[4];
         top_accelerations_total = new double[4];
+        top_accelerations_cast = new double[4];
         rotations = new double[3];
 
         backgroundView = (ImageView) findViewById(R.id.start_waves);
-        fishResultView = (TextView) findViewById(R.id.fish_result);
-        catchCountView= (TextView) findViewById(R.id.catch_count);
+        lineLengthView = (TextView) findViewById(R.id.line_length);
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -99,11 +141,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         backgroundView.setImageDrawable(null);
 
         // Intent?
-        intent = new Intent(this, BackgroundSoundService.class);
-        startService(intent);
+        bgSoundintent = new Intent(this, BackgroundSoundService.class);
+        startService(bgSoundintent);
 
         // Start animation
         wavesAnimation.start();
+
+        // Making sure
+        setCastMode(CAST_MODE_IDLE);
     }
 
     @Override
@@ -113,6 +158,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // for the system's orientation sensor registered listeners
         sensorManager.registerListener(this, linearAccelerationSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
+        // resume
+        soundPool.autoResume();
     }
 
     @Override
@@ -126,7 +174,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         wavesAnimation.stop();
 
         // stop other
-        stopService(intent);
+        stopService(bgSoundintent);
+        soundPool.autoPause();
     }
 
     @Override
@@ -142,6 +191,59 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (debug) {
                 updateRotationViews();
             }
+        }
+        // Log.w(TAG, rotations[2] + " vs " + castPrimeThresholdAngle + castPrimeThresholdAngleBuffer / 2);
+        if (castMode == CAST_MODE_IDLE && rotations[2] > castPrimeThresholdAngle + castPrimeThresholdAngleBuffer / 2) {
+            setCastMode(CAST_MODE_PRIMED);
+            Arrays.fill(top_accelerations_cast, 0);
+            // am.playSoundEffect(AudioManager.FX_KEY_CLICK);
+            soundPool.play(sound_click, 1, 1, 0, 1, 1);
+            vibrator.vibrate(100);
+        }
+
+        if (castMode == CAST_MODE_PRIMED) {
+
+            if (rotations[2] < castPrimeThresholdAngle - castPrimeThresholdAngleBuffer / 2) {
+
+                if (linear_acceleration[3] > 50) {
+                    setCastMode(CAST_MODE_CASTING);
+                } else {
+                    setCastMode(CAST_MODE_IDLE);
+                }
+
+            }
+
+
+        }
+
+        if (castMode == CAST_MODE_CASTING) {
+
+            if(linear_acceleration[3] < 50) {
+                setCastMode(CAST_MODE_AIRBORNE);;
+                vibrator.vibrate(1000);
+                soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
+            }
+        }
+
+        if (castMode == CAST_MODE_AIRBORNE) {
+
+            // Made up math that kinda works
+            if (lineLength < (top_accelerations_cast[3] / 3)) {
+                soundPool.play(sound_click, 1, 1, 0, 0, 1);
+                lineLength += 1;
+                SystemClock.sleep(50); // probably terrible or something
+                lineLengthView.setText(getString(R.string.line_length, lineLength)); // TODO: Blocked?
+            } else {
+                soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
+                setCastMode(CAST_MODE_IN_WATER);
+
+            }
+        }
+
+        if(castMode == CAST_MODE_IN_WATER && lineLength < 0) {
+            lineLength = 0;
+            setCastMode(CAST_MODE_IDLE);
+            soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
         }
     }
 
@@ -207,6 +309,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // checking |t|
         if(Math.abs(linear_acceleration[3]) > Math.abs(top_accelerations_split[3])) {
             System.arraycopy(linear_acceleration, 0, top_accelerations_total, 0, 4);
+            System.arraycopy(linear_acceleration, 0, top_accelerations_cast, 0, 4);
             top_accelerations_split[3] = linear_acceleration[3];
         }
 
@@ -233,21 +336,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         rotations[2] = Math.asin(-2.0 * (qx*qz - qy*qw));
     }
 
-    public void cast(View view){
-
-        // Simple placeholder
-        if(rd.nextBoolean()) {
-            nCaught++;
-            fishResultView.setText(R.string.fish_was_caught);
-            catchCountView.setText(
-                    getString(R.string.catch_count, nCaught)
-            );
-
-        } else {
-            fishResultView.setText(R.string.fish_got_away);
-        }
-    }
-
     public void resetHighestAccs(View view) {
         // reset accelerations
         for(int i = 0; i<4; i++) {
@@ -268,16 +356,56 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             // set VISIBLE
             debugLayout.setVisibility(View.VISIBLE);
             // set GONE
-            fishResultView.setVisibility(View.GONE);
-            catchCountView.setVisibility(View.GONE);
+            // lineLengthView.setVisibility(View.GONE);
             backgroundView.setVisibility(View.GONE);
+
+            stopService(bgSoundintent);
         } else {
             // set GONE
             debugLayout.setVisibility(View.GONE);
             // set VISIBLE
-            fishResultView.setVisibility(View.VISIBLE);
-            catchCountView.setVisibility(View.VISIBLE);
+            // lineLengthView.setVisibility(View.VISIBLE);
             backgroundView.setVisibility(View.VISIBLE);
+
+            startService(bgSoundintent);
         }
+    }
+
+    public void reel(View view) {
+        lineLength = 0;
+        lineLengthView.setText(getString(R.string.line_length, lineLength));
+        setCastMode(CAST_MODE_IDLE);
+    }
+
+    public void setCastMode(int castMode) {
+        Log.w(TAG, "CAST_MODE: " + this.castMode + " -> " + castMode);
+        this.castMode = castMode;
+        castModeView.setText(getString(R.string.cast_mode, this.castMode));
+    }
+
+    // Stafford Williams https://stackoverflow.com/a/27552576
+    protected SoundPool createSoundPool() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            return createNewSoundPool();
+        } else {
+            return createOldSoundPool();
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    protected SoundPool createNewSoundPool(){
+        AudioAttributes attributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+        return new SoundPool.Builder()
+                .setAudioAttributes(attributes)
+                .setMaxStreams(5)
+                .build();
+    }
+
+    @SuppressWarnings("deprecation")
+    protected SoundPool createOldSoundPool(){
+        return new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
     }
 }

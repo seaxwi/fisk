@@ -22,4 +22,8 @@
     <string name="fish_was_caught">Nice catch!</string>
     <string name="fish_got_away">Fish got away!</string>
     <string name="reset">reset</string>
+    <string name="line_length">%1$.1f m</string>
+    <string name="line_not_cast">Line not cast</string>
+    <string name="reel_in">REEL IN</string>
+    <string name="cast_mode">CAST_MODE: %1$o</string>
 </resources>

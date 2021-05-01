@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorFiskBlue"
-    android:onClick="cast"
     app:layoutDescription="@xml/activity_fishing_scene"
     tools:context=".FishingActivity">
 
@@ -23,12 +22,12 @@
         app:srcCompat="@drawable/waves1" />
 
     <Button
-        android:id="@+id/btn_cast"
+        android:id="@+id/btn_reel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:onClick="cast"
-        android:text="@string/btn_cast"
+        android:onClick="reel"
+        android:text="@string/reel_in"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -47,27 +46,16 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/catch_count"
+        android:id="@+id/line_length"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
+        android:text="@string/line_not_cast"
         android:textColor="#FFFFFF"
         android:textSize="24sp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_cast"
-        app:layout_constraintEnd_toEndOf="@+id/btn_cast"
-        app:layout_constraintStart_toStartOf="@+id/btn_cast" />
-
-    <TextView
-        android:id="@+id/fish_result"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="@string/cast_line_to_start"
-        android:textColor="#FFFFFF"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toTopOf="@+id/catch_count"
-        app:layout_constraintEnd_toEndOf="@+id/btn_cast"
-        app:layout_constraintStart_toStartOf="@+id/btn_cast" />
+        app:layout_constraintBottom_toTopOf="@+id/btn_reel"
+        app:layout_constraintEnd_toEndOf="@+id/btn_reel"
+        app:layout_constraintStart_toStartOf="@+id/btn_reel" />
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/debug_values"
@@ -87,11 +75,10 @@
             android:id="@+id/btn_reset"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:onClick="resetHighestAccs"
             android:text="@string/reset"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/rotation_value" />
+            app:layout_constraintTop_toBottomOf="@+id/cast_mode" />
 
         <TextView
             android:id="@+id/acc_values_total"
@@ -110,6 +97,15 @@
             android:text="@string/initializing_message"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/acc_values_total" />
+
+        <TextView
+            android:id="@+id/cast_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/initializing_message"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/rotation_value" />
 
         <TextView
             android:id="@+id/acc_values_xyz"
