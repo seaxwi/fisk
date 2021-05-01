@@ -12,7 +12,6 @@ import android.os.Vibrator;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -49,10 +48,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private Random rd;
 
     // Sensor Arrays
-    private float[] gravity;
-    private float[] linear_acceleration;
-    private double[] rotation_vector;
-    private double[] top_rotation_vector;
+    private double[] linear_acceleration;
+    private double[] top_accelerations_split;
+    private double[] top_accelerations_total;
+    private double[] rotations;
+    private double[] top_rotations;
 
     // Values
     private int nCaught = 0;
@@ -89,10 +89,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         rd = new Random();
 
         /* Declare arrays */
-        gravity = new float[3];
-        linear_acceleration = new float[3];
-        rotation_vector = new double[3];
-        top_rotation_vector = new double[3];
+        linear_acceleration = new double[4];
+        top_accelerations_split = new double[4];
+        top_accelerations_total = new double[4];
+        rotations = new double[3];
+        top_rotations = new double[3];
 
         backgroundView = (ImageView) findViewById(R.id.start_waves);
         fishResultView = (TextView) findViewById(R.id.fish_result);
@@ -141,76 +142,61 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-            // Update values
-            try {
-                updateAccelerationValues(event);
-            } catch (Exception e) {
-                e.printStackTrace();
+            updateAccelerationValues(event);
+            if(debug) {
+                updateAccelerationViews();
             }
+
         } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             updateRotationValues(event);
-            if(Math.abs(rotation_vector[0]) > Math.abs(top_rotation_vector[0])) {
-                top_rotation_vector[0] = rotation_vector[0];
-            }
-            if(Math.abs(rotation_vector[1]) > Math.abs(top_rotation_vector[1])) {
-                top_rotation_vector[1] = rotation_vector[1];
-            }
-            if(Math.abs(rotation_vector[2]) > Math.abs(top_rotation_vector[2])) {
-                top_rotation_vector[2] = rotation_vector[2];
-            }
-            rotationView.setText(
-                    getString(R.string.rotations,
-                            Math.toDegrees(rotation_vector[0]),
-                            Math.toDegrees(rotation_vector[1]),
-                            Math.toDegrees(rotation_vector[2]),
-                            Math.toDegrees(top_rotation_vector[0]),
-                            Math.toDegrees(top_rotation_vector[1]),
-                            Math.toDegrees(top_rotation_vector[2])
-                    )
-            );
-        }
-
-        boolean change = false;
-
-        if(Math.abs(totAcc) > Math.abs(highestTotAcc)) {
-            highestTotAcc = totAcc;
-            change = true;
-            totalDebug.setText(
-                    getString(R.string.acceleration_total, highestTotAcc, linear_acceleration[0],
-                            linear_acceleration[1], linear_acceleration[2])
-            );
-        }
-        if(Math.abs(linear_acceleration[0]) > Math.abs(highestXAcc)) {
-            highestXAcc = linear_acceleration[0];
-            change = true;
-        }
-        if(Math.abs(linear_acceleration[1]) > Math.abs(highestYAcc)) {
-            highestYAcc = linear_acceleration[1];
-            change = true;
-        }
-        if(Math.abs(linear_acceleration[2]) > Math.abs(highestZAcc)) {
-            highestZAcc = linear_acceleration[2];
-            change = true;
-        }
-
-        if(change){
-            // Update acc textViews
-            xzyDebug.setText(
-                    getString(R.string.acceleration_xyz, highestXAcc,
-                            highestYAcc, highestZAcc)
-            );
-
-            // Debug: Vibrate unless there was a recent vibration
-            long currTime = System.currentTimeMillis();
-            if(debug && currTime > lastVibration + 1000) {
-                lastVibration = currTime;
-                // sensorText.setText("cool!");
-
-                lastVibration = currTime;
-                //deprecated in API 26 (!)
-                // vibrator.vibrate(500);
+            if (debug) {
+                updateRotationViews();
             }
         }
+
+        // Debug: Vibrate unless there was a recent vibration
+        long currTime = System.currentTimeMillis();
+        if(debug && currTime > lastVibration + 1000) {
+            lastVibration = currTime;
+            // sensorText.setText("cool!");
+
+            lastVibration = currTime;
+            //deprecated in API 26 (!)
+            // vibrator.vibrate(500);
+        }
+    }
+
+    private void updateAccelerationViews() {
+        // Update xzy textViews
+
+        xzyDebug.setText(
+                getString(R.string.acceleration_xyz,
+                        top_accelerations_split[0],
+                        top_accelerations_split[1],
+                        top_accelerations_split[2])
+        );
+
+        // update total textViews
+        totalDebug.setText(
+                getString(R.string.acceleration_total,
+                        top_accelerations_total[3],
+                        top_accelerations_total[0],
+                        top_accelerations_total[1],
+                        top_accelerations_total[2])
+        );
+    }
+
+    private void updateRotationViews() {
+        rotationView.setText(
+                getString(R.string.rotations,
+                        Math.toDegrees(rotations[0]),
+                        Math.toDegrees(rotations[1]),
+                        Math.toDegrees(rotations[2]),
+                        Math.toDegrees(top_rotations[0]),
+                        Math.toDegrees(top_rotations[1]),
+                        Math.toDegrees(top_rotations[2])
+                )
+        );
     }
 
 
@@ -225,63 +211,57 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // not in use
     }
 
-    private void updateAccelerationValues(SensorEvent event) throws Exception {
+    private void updateAccelerationValues(SensorEvent event) {
+        linear_acceleration[0] = event.values[0];
+        linear_acceleration[1] = event.values[1];
+        linear_acceleration[2] = event.values[2];
+        // Getting total magnitude sqrt(x^2 + y^2 + z^2)
+        linear_acceleration[3] = Math.sqrt(Math.pow(linear_acceleration[0], 2)
+                + Math.pow(linear_acceleration[1], 2)
+                + Math.pow(linear_acceleration[2], 2)
+        );
 
-        int sensorType = linearAccelerationSensor.getType();
-
-        if(sensorType == Sensor.TYPE_ACCELEROMETER) {
-            // https://developer.android.com/guide/topics/sensors/sensors_motion#sensors-motion-accel
-
-            // In this example, alpha is calculated as t / (t + dT),
-            // where t is the low-pass filter's time-constant and
-            // dT is the event delivery rate.
-
-            float alpha = 0.8f;
-
-            // Isolate the force of gravity with the low-pass filter.
-            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-
-            // Remove the gravity contribution with the high-pass filter.
-            linear_acceleration[0] = event.values[0] - gravity[0];
-            linear_acceleration[1] = event.values[1] - gravity[1];
-            linear_acceleration[2] = event.values[2] - gravity[2];
-        } else if(sensorType == Sensor.TYPE_LINEAR_ACCELERATION) {
-            linear_acceleration[0] = event.values[0];
-            linear_acceleration[1] = event.values[1];
-            linear_acceleration[2] = event.values[2];
-
-            float aX = event.values[0];
-            float aY = event.values[1];
-            //aZ = event.values[2];
-            angle = Math.atan2(aX, aY)/(Math.PI/180);
-        } else {
-            throw new Exception("Error: Wrong sensor type");
+        // checking x, y, z
+        for(int i = 0; i < 3; i++) {
+            if(Math.abs(linear_acceleration[i]) > Math.abs(top_accelerations_split[i])) {
+                top_accelerations_split[i] = linear_acceleration[i];
+            }
         }
 
-        totAcc = Math.sqrt(linear_acceleration[0] * linear_acceleration[0]
-                + linear_acceleration[1] * linear_acceleration[1]
-                + linear_acceleration[2] * linear_acceleration[2]
-        );
+        // checking |t|
+        if(Math.abs(linear_acceleration[3]) > Math.abs(top_accelerations_split[3])) {
+            System.arraycopy(linear_acceleration, 0, top_accelerations_total, 0, 4);
+            top_accelerations_split[3] = linear_acceleration[3];
+        }
+
     }
 
     private void updateRotationValues(SensorEvent event) {
         // https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/indexLocal.htm
 
+        // Converting quaternions to euler
         float qx = event.values[0];
         float qy = event.values[1];
         float qz = event.values[2];
         float qw = event.values[3];
 
+        // square
         double sqw = qw*qw;
         double sqx = qx*qx;
         double sqy = qy*qy;
         double sqz = qz*qz;
 
-        rotation_vector[0] = Math.atan2(2.0 * (qx*qy + qz*qw),(sqx - sqy - sqz + sqw));
-        rotation_vector[1] = Math.atan2(2.0 * (qy*qz + qx*qw),(-sqx - sqy + sqz + sqw));
-        rotation_vector[2] = Math.asin(-2.0 * (qx*qz - qy*qw));
+        // solve for x, y , z
+        rotations[0] = Math.atan2(2.0 * (qx*qy + qz*qw),(sqx - sqy - sqz + sqw));
+        rotations[1] = Math.atan2(2.0 * (qy*qz + qx*qw),(-sqx - sqy + sqz + sqw));
+        rotations[2] = Math.asin(-2.0 * (qx*qz - qy*qw));
+
+        // update top rotations
+        for(int i = 0; i < 3; i++) {
+            if(Math.abs(rotations[i]) > Math.abs(top_rotations[i])) {
+                top_rotations[i] = rotations[i];
+            }
+        }
     }
 
     public void cast(View view){
@@ -300,28 +280,33 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     public void resetHighestAccs(View view) {
-        highestXAcc = 0;
-        highestYAcc = 0;
-        highestZAcc = 0;
-        highestTotAcc = 0;
-        highestXRot = 0;
-        top_rotation_vector[0] = 0;
-        top_rotation_vector[1] = 0;
-        top_rotation_vector[2] = 0;
+        // reset accelerations
+        for(int i = 0; i<4; i++) {
+            top_accelerations_split[i] = 0;
+            top_accelerations_total[i] = 0;
+        }
+
+        // reset rotations
+        for(int i = 0; i<3; i++) {
+            rotations[i] = 0;
+            top_rotations[i] = 0;
+        }
     }
 
     public void toggleDebug(View view) {
         debug = !debug;
 
         if(debug) {
+            // set VISIBLE
             debugLayout.setVisibility(View.VISIBLE);
-
+            // set GONE
             fishResultView.setVisibility(View.GONE);
             catchCountView.setVisibility(View.GONE);
             backgroundView.setVisibility(View.GONE);
         } else {
+            // set GONE
             debugLayout.setVisibility(View.GONE);
-
+            // set VISIBLE
             fishResultView.setVisibility(View.VISIBLE);
             catchCountView.setVisibility(View.VISIBLE);
             backgroundView.setVisibility(View.VISIBLE);
