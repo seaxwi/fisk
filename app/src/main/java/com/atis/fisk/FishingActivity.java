@@ -3,7 +3,9 @@ package com.atis.fisk;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -64,6 +66,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Views
     private ConstraintLayout debugViewLayout;
     private ConstraintLayout catchViewLayout;
+    private ImageView catchImage;
+    private TextView catchName;
     private TextView xzyDebug;
     private TextView totalDebug;
     private ImageView backgroundView;
@@ -167,6 +171,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         backgroundView = (ImageView) findViewById(R.id.start_waves);
         lineLengthView = (TextView) findViewById(R.id.line_length);
+
+        catchImage = findViewById(R.id.catch_image);
+        catchName = findViewById(R.id.catch_name);
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -287,13 +294,23 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         }
 
         if(castMode == CAST_MODE_IN_WATER) {
+
+            // TODO: More fish stuff?
+
             if(lineLength <= 0) {
                 lineLength = 0;
                 setCastMode(CAST_MODE_IDLE);
                 soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
-            }
 
-            // TODO: Fish stuff?
+                // Testing catchView
+                int fishID = rd.nextInt(8);
+                Fish caughtFish = fishArray[fishID];
+                Drawable d = getResources().getDrawable(caughtFish.getResourceID());
+                catchImage.setImageDrawable(d);
+                catchName.setText(caughtFish.getName());
+
+                setCatchViewVisibility(true);
+            }
         }
 
         if (reedMode == REED_MODE_STARTING && lineLength > 0) {
@@ -444,8 +461,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
-    public void toggleCatchView(View view) {
-        catchViewOpen = !catchViewOpen;
+    public void setCatchViewVisibility(boolean visible) {
+        catchViewOpen = visible;
 
         if(catchViewOpen) {
             // set VISIBLE
@@ -458,6 +475,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             startService(bgSoundintent);
         }
+    }
+
+    public void closeCatchView(View view) {
+            
+        setCatchViewVisibility(false);
     }
 
     public void setCastMode(int castMode) {

@@ -121,7 +121,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#E6FFFFFF"
-        android:onClick="toggleCatchView"
+        android:onClick="closeCatchView"
         android:padding="16dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
