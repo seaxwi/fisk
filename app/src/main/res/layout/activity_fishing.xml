@@ -133,14 +133,15 @@
 
         <ImageView
             android:id="@+id/catch_image"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:adjustViewBounds="true"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/catch_mesage"
-            app:srcCompat="@drawable/pink_fish" />
+            app:srcCompat="@drawable/tin_can" />
 
         <TextView
             android:id="@+id/catch_mesage"
