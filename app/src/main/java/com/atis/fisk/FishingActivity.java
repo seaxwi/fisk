@@ -534,14 +534,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Fish[] fishArray = new Fish[8];
 
         //create fish objects
-        Fish pinkFish = new Fish("Pink Fish", R.drawable.pink_fish, 15);
-        Fish blueFish = new Fish("Blue Fish", R.drawable.blue_fish, 25);
-        Fish yellowFish = new Fish("Yellow Fish", R.drawable.yellow_fish, 35);
-        Fish flounder = new Fish("Flounder", R.drawable.flounder, 40);
-        Fish crab = new Fish("Crab", R.drawable.crab, 45);
-        Fish jellyfish = new Fish("Jellyfish", R.drawable.jellyfish, 50);
-        Fish seahorse = new Fish("Seahorse", R.drawable.seahorse, 55);
-        Fish tinCan = new Fish("Tin Can", R.drawable.tin_can, 60);
+        Fish pinkFish = new Fish("Pink Fish", R.drawable.pink_fish, 1);
+        Fish blueFish = new Fish("Blue Fish", R.drawable.blue_fish, 1);
+        Fish yellowFish = new Fish("Yellow Fish", R.drawable.yellow_fish, 1);
+        Fish flounder = new Fish("Flounder", R.drawable.flounder, 3);
+        Fish crab = new Fish("Crab", R.drawable.crab, 3);
+        Fish jellyfish = new Fish("Jellyfish", R.drawable.jellyfish, 3);
+        Fish seahorse = new Fish("Seahorse", R.drawable.seahorse, 3);
+        Fish tinCan = new Fish("Tin Can", R.drawable.tin_can, 5);
 
         //add fish objects to array
         fishArray[0] = pinkFish;
