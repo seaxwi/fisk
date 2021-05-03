@@ -18,7 +18,9 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -29,11 +31,17 @@ import java.util.Random;
 public class FishingActivity extends AppCompatActivity implements SensorEventListener {
     private static final String TAG = "FishingActivity";
 
+    private static int CAST_MODE_LOADING = -1;
     private static int CAST_MODE_IDLE = 0;
     private static int CAST_MODE_PRIMED = 1;
     private static int CAST_MODE_CASTING = 2;
     private static int CAST_MODE_AIRBORNE = 3;
     private static int CAST_MODE_IN_WATER = 4;
+
+    private static int REED_MODE_BLOCKED = -1;
+    private static int REED_MODE_IDLE = 0;
+    private static int REED_MODE_STARTING = 1;
+    private static int REED_MODE_REELING = 2;
 
     // Sound
     private SoundPool soundPool;
@@ -62,6 +70,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private TextView castModeView;
     private AnimationDrawable wavesAnimation;
 
+    // Button
+    private Button reelButton;
+
     // final MediaPlayer mp = MediaPlayer.create(this, R.raw.);
     private AudioManager am;
 
@@ -77,17 +88,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double[] rotations;
 
     // Cast values
-    private int castMode = CAST_MODE_IDLE;
+    private int castMode = CAST_MODE_LOADING;
+    private int reedMode = REED_MODE_BLOCKED;
     private double castPrimeThresholdAngle = Math.toRadians(45);
     private double castPrimeThresholdAngleBuffer = Math.toRadians(10);
     private double lineLength = 0;
 
     // Sounds
-    int sound_swosh;
-    int sound_click;
-    int sound_splash_small;
-    int sound_splash_big;
-    int sound_splash_droplet;
+    int sound_swosh, sound_click, sound_splash_small, sound_splash_big, sound_splash_droplet,
+    sound_prime, sound_idle, sound_reel;
+    int reelStreamId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,11 +116,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // Loud sounds (TODO: what about onResume?)
         soundPool = createSoundPool();
 
-        sound_swosh = soundPool.load(getApplicationContext(), R.raw.megaswosh1, 1);
-        sound_click = soundPool.load(getApplicationContext(), R.raw.click, 1);
-        sound_splash_small = soundPool.load(getApplicationContext(), R.raw.splash1, 1);
-        sound_splash_big = soundPool.load(getApplicationContext(), R.raw.splash2, 1);
-        sound_splash_droplet = soundPool.load(getApplicationContext(), R.raw.droplet, 1);
+        sound_swosh = soundPool.load(this, R.raw.megaswosh1, 1);
+        sound_click = soundPool.load(this, R.raw.click, 1);
+        sound_splash_small = soundPool.load(this, R.raw.splash1, 1);
+        sound_splash_big = soundPool.load(this, R.raw.splash2, 1);
+        sound_splash_droplet = soundPool.load(this, R.raw.droplet, 1);
+        sound_prime = soundPool.load(this, R.raw.cursor_select, 1);
+        sound_idle = soundPool.load(this, R.raw.cursor_back, 1);
+        sound_reel = soundPool.load(this, R.raw.reel, 1);
 
         // Wait for sensor to calibrate or something (TODO: Check if needed)
         SystemClock.sleep(100);
@@ -119,6 +132,25 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         totalDebug = (TextView) findViewById(R.id.acc_values_total);
         rotationView = (TextView) findViewById(R.id.rotation_value);
         castModeView = (TextView) findViewById(R.id.cast_mode);
+
+        reelButton = findViewById(R.id.btn_reel);
+        int reelStreamId;
+        // https://stackoverflow.com/questions/47107105/android-button-has-setontouchlistener-called-on-it-but-does-not-override-perform
+        reelButton.setOnTouchListener(new View.OnTouchListener() {
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    setReedMode(REED_MODE_STARTING);
+                }
+                if(event.getAction() == MotionEvent.ACTION_UP){
+                    setReedMode(REED_MODE_IDLE);
+                }
+                return true;
+            }
+
+        });
+
         rd = new Random();
 
         /* Declare arrays */
@@ -180,6 +212,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        long time = SystemClock.elapsedRealtime();
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             updateAccelerationValues(event);
             if(debug) {
@@ -192,12 +225,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 updateRotationViews();
             }
         }
-        // Log.w(TAG, rotations[2] + " vs " + castPrimeThresholdAngle + castPrimeThresholdAngleBuffer / 2);
+
         if (castMode == CAST_MODE_IDLE && rotations[2] > castPrimeThresholdAngle + castPrimeThresholdAngleBuffer / 2) {
             setCastMode(CAST_MODE_PRIMED);
-            Arrays.fill(top_accelerations_cast, 0);
-            // am.playSoundEffect(AudioManager.FX_KEY_CLICK);
-            soundPool.play(sound_click, 1, 1, 0, 1, 1);
+            soundPool.play(sound_prime, 1, 1, 0, 0, 1);
             vibrator.vibrate(100);
         }
 
@@ -205,10 +236,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             if (rotations[2] < castPrimeThresholdAngle - castPrimeThresholdAngleBuffer / 2) {
 
-                if (linear_acceleration[3] > 50) {
+                if (linear_acceleration[3] > 30 + 10) {
+                    Arrays.fill(top_accelerations_cast, 0);
                     setCastMode(CAST_MODE_CASTING);
+                    soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
                 } else {
                     setCastMode(CAST_MODE_IDLE);
+                    soundPool.play(sound_idle, 1, 1, 0, 0, 1);
+                    vibrator.vibrate(100);
                 }
 
             }
@@ -218,33 +253,64 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         if (castMode == CAST_MODE_CASTING) {
 
-            if(linear_acceleration[3] < 50) {
-                setCastMode(CAST_MODE_AIRBORNE);;
+            if(linear_acceleration[3] < 30) {
                 vibrator.vibrate(1000);
-                soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
+                Log.w(TAG, "Cast: " + Arrays.toString(top_accelerations_cast));
+
+                new Thread(new Runnable() {
+                    public void run() {
+                        // a potentially time consuming task
+                        int sound = soundPool.play(sound_click, 1, 1, 0, -1, 1.5f);
+                        while (lineLength < (top_accelerations_cast[3] / 3)) { // TODO: This is prone to glitches, like counter reeling
+                            lineLength += 0.1;
+                            SystemClock.sleep(10);
+                        }
+                        soundPool.stop(sound);
+                    }
+                }).start();
+
+                setCastMode(CAST_MODE_AIRBORNE);
             }
         }
 
-        if (castMode == CAST_MODE_AIRBORNE) {
+        if(castMode == CAST_MODE_AIRBORNE) {
 
-            // Made up math that kinda works
-            if (lineLength < (top_accelerations_cast[3] / 3)) {
-                soundPool.play(sound_click, 1, 1, 0, 0, 1);
-                lineLength += 1;
-                SystemClock.sleep(50); // probably terrible or something
-                lineLengthView.setText(getString(R.string.line_length, lineLength)); // TODO: Blocked?
-            } else {
+            if(lineLength > (top_accelerations_cast[3] / 3)) {
                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
                 setCastMode(CAST_MODE_IN_WATER);
-
             }
         }
 
-        if(castMode == CAST_MODE_IN_WATER && lineLength < 0) {
-            lineLength = 0;
-            setCastMode(CAST_MODE_IDLE);
-            soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
+        if(castMode == CAST_MODE_IN_WATER) {
+            if(lineLength <= 0) {
+                lineLength = 0;
+                setCastMode(CAST_MODE_IDLE);
+                soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
+            }
+
+            // TODO: Fish stuff?
         }
+
+        if (reedMode == REED_MODE_STARTING && lineLength > 0) {
+
+            setReedMode(REED_MODE_REELING);
+
+            new Thread(new Runnable() {
+                public void run() {
+                    // a potentially time consuming task
+                    int sound = soundPool.play(sound_reel, 1, 1, 0, 0, 1);
+                    while (lineLength > 0 && reedMode == REED_MODE_REELING) {
+
+                        lineLength -= 0.1;
+                        SystemClock.sleep(10);
+                    }
+                    soundPool.stop(sound);
+                }
+            }).start();
+        }
+
+        // Update line length
+        lineLengthView.setText(getString(R.string.line_length, lineLength));
     }
 
     private void updateAccelerationViews() {
@@ -309,8 +375,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // checking |t|
         if(Math.abs(linear_acceleration[3]) > Math.abs(top_accelerations_split[3])) {
             System.arraycopy(linear_acceleration, 0, top_accelerations_total, 0, 4);
-            System.arraycopy(linear_acceleration, 0, top_accelerations_cast, 0, 4);
             top_accelerations_split[3] = linear_acceleration[3];
+        }
+        if(Math.abs(linear_acceleration[3]) > Math.abs(top_accelerations_cast[3])) {
+            System.arraycopy(linear_acceleration, 0, top_accelerations_cast, 0, 4);
         }
 
     }
@@ -371,16 +439,20 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
-    public void reel(View view) {
-        lineLength = 0;
-        lineLengthView.setText(getString(R.string.line_length, lineLength));
-        setCastMode(CAST_MODE_IDLE);
-    }
-
     public void setCastMode(int castMode) {
         Log.w(TAG, "CAST_MODE: " + this.castMode + " -> " + castMode);
         this.castMode = castMode;
         castModeView.setText(getString(R.string.cast_mode, this.castMode));
+    }
+
+    public void setReedMode(int reedMode) {
+        Log.w(TAG, "REEL_MODE: " + this.reedMode + " -> " + reedMode);
+        this.reedMode = reedMode;
+        if(reedMode == REED_MODE_STARTING) {
+            reelStreamId = soundPool.play(sound_reel, 1, 1, 0, -1, 1);
+        } else {
+            soundPool.stop(reelStreamId);
+        }
     }
 
     // Stafford Williams https://stackoverflow.com/a/27552576
