@@ -557,13 +557,25 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     private Fish determineCaughtFish(Fish[] fishArray){
-        int randomNumber = rd.nextInt(60);
-        Fish result = fishArray[0];
-        for(Fish f : fishArray){
-            if(f.getWeight()<=randomNumber){
-                result = f;
+
+        int weightSum = 0;
+        for(Fish f: fishArray) {
+            weightSum += f.getWeight();
+        }
+
+        Log.w(TAG, "weightsum: " + weightSum);
+
+        int randomNumber = rd.nextInt(weightSum);
+
+        for(Fish f: fishArray) {
+            int fishWeight = f.getWeight();
+            if(randomNumber > fishWeight) {
+                randomNumber -= fishWeight;
+            } else {
+                return f;
             }
         }
-        return result;
+        Log.w(TAG, "Fail");
+        return fishArray[7];
     }
 }
