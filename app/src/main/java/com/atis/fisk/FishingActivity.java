@@ -541,7 +541,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Fish crab = new Fish("Crab", R.drawable.crab, 45);
         Fish jellyfish = new Fish("Jellyfish", R.drawable.jellyfish, 50);
         Fish seahorse = new Fish("Seahorse", R.drawable.seahorse, 55);
-        Fish tinCan = new Fish("Tin Can", R.drawable.tin_can, 5);
+        Fish tinCan = new Fish("Tin Can", R.drawable.tin_can, 60);
 
         //add fish objects to array
         fishArray[0] = pinkFish;
@@ -557,7 +557,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     private Fish determineCaughtFish(Fish[] fishArray){
-        int randomNumber = rd.nextInt(55);
+        int randomNumber = rd.nextInt(60);
         Fish result = fishArray[0];
         for(Fish f : fishArray){
             if(f.getWeight()<=randomNumber){
