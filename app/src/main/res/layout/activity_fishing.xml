@@ -120,22 +120,16 @@
         android:id="@+id/fish_display_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        android:padding="16"
+        android:background="#E6FFFFFF"
+        android:onClick="toggleCatchView"
+        android:padding="16dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/catch_mesage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="You caught something!"
-            app:layout_constraintEnd_toEndOf="@+id/catch_image"
-            app:layout_constraintStart_toStartOf="@+id/catch_image"
-            app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
 
         <ImageView
             android:id="@+id/catch_image"
@@ -146,6 +140,15 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/catch_mesage"
             app:srcCompat="@drawable/ic_launcher_foreground" />
+
+        <TextView
+            android:id="@+id/catch_mesage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You caught something!"
+            app:layout_constraintEnd_toEndOf="@+id/catch_image"
+            app:layout_constraintStart_toStartOf="@+id/catch_image"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/catch_name"

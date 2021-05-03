@@ -47,7 +47,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private SoundPool soundPool;
 
     // Mode
-    boolean debug = false;
+    boolean debugViewOpen = false;
+    boolean catchViewOpen = false;
 
     // Intent
     private Intent bgSoundintent;
@@ -61,7 +62,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private Vibrator vibrator;
 
     // Views
-    private ConstraintLayout debugLayout;
+    private ConstraintLayout debugViewLayout;
+    private ConstraintLayout catchViewLayout;
     private TextView xzyDebug;
     private TextView totalDebug;
     private ImageView backgroundView;
@@ -103,7 +105,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fishing);
 
-        debugLayout = (ConstraintLayout) findViewById(R.id.debug_values);
+        debugViewLayout = (ConstraintLayout) findViewById(R.id.debug_values);
+        catchViewLayout = (ConstraintLayout) findViewById(R.id.fish_display_layout);
 
         am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
@@ -222,13 +225,13 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         long time = SystemClock.elapsedRealtime();
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             updateAccelerationValues(event);
-            if(debug) {
+            if(debugViewOpen) {
                 updateAccelerationViews();
             }
 
         } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             updateRotationValues(event);
-            if (debug) {
+            if (debugViewOpen) {
                 updateRotationViews();
             }
         }
@@ -425,11 +428,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     public void toggleDebug(View view) {
-        debug = !debug;
+        debugViewOpen = !debugViewOpen;
 
-        if(debug) {
+        if(debugViewOpen) {
             // set VISIBLE
-            debugLayout.setVisibility(View.VISIBLE);
+            debugViewLayout.setVisibility(View.VISIBLE);
             // set GONE
             // lineLengthView.setVisibility(View.GONE);
             backgroundView.setVisibility(View.GONE);
@@ -437,10 +440,26 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             stopService(bgSoundintent);
         } else {
             // set GONE
-            debugLayout.setVisibility(View.GONE);
+            debugViewLayout.setVisibility(View.GONE);
             // set VISIBLE
             // lineLengthView.setVisibility(View.VISIBLE);
             backgroundView.setVisibility(View.VISIBLE);
+
+            startService(bgSoundintent);
+        }
+    }
+
+    public void toggleCatchView(View view) {
+        catchViewOpen = !catchViewOpen;
+
+        if(catchViewOpen) {
+            // set VISIBLE
+            catchViewLayout.setVisibility(View.VISIBLE);
+
+            stopService(bgSoundintent);
+        } else {
+            // set GONE
+            debugViewLayout.setVisibility(View.GONE);
 
             startService(bgSoundintent);
         }
