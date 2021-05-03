@@ -560,7 +560,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         int randomNumber = rd.nextInt(55);
         Fish result = fishArray[0];
         for(Fish f : fishArray){
-            if(f.getWeight()<randomNumber){
+            if(f.getWeight()<=randomNumber){
                 result = f;
             }
         }
