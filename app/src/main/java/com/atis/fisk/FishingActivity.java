@@ -107,8 +107,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
-        //create fishArray
-        Fish[] fishArray = createFishArray();
+
+        /* Fish template
+        // Pink fish
+        String name = "Pink fish";
+        int imageResource = R.drawable.pink_fish;
+        int occurance = 10;
+        */
+
 
         /* Setup sensor */
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
