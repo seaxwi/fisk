@@ -305,8 +305,13 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 // Testing catchView
                 int fishID = rd.nextInt(8);
                 Fish caughtFish = fishArray[fishID];
-                Drawable d = getResources().getDrawable(caughtFish.getResourceID());
-                catchImage.setImageDrawable(d);
+                Log.w(TAG, "Caught fish " + caughtFish.getName() + "!");
+
+                // TODO
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    Log.w(TAG, "Drawing image of caught fish...");
+                    catchImage.setImageDrawable(getDrawable(R.drawable.pink_fish));
+                }
                 catchName.setText(caughtFish.getName());
 
                 setCatchViewVisibility(true);
@@ -471,14 +476,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             stopService(bgSoundintent);
         } else {
             // set GONE
-            debugViewLayout.setVisibility(View.GONE);
+            catchViewLayout.setVisibility(View.GONE);
 
             startService(bgSoundintent);
         }
     }
 
     public void closeCatchView(View view) {
-            
+
         setCatchViewVisibility(false);
     }
 
