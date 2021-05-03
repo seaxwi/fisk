@@ -120,15 +120,15 @@
         android:id="@+id/fish_display_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="32dp"
         android:background="#E6FFFFFF"
         android:onClick="closeCatchView"
         android:padding="16dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/line_length"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/start_waves"
         tools:visibility="visible">
 
         <ImageView
@@ -137,17 +137,19 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/catch_mesage"
-            app:srcCompat="@drawable/ic_launcher_foreground" />
+            app:srcCompat="@drawable/pink_fish" />
 
         <TextView
             android:id="@+id/catch_mesage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="You caught something!"
-            app:layout_constraintEnd_toEndOf="@+id/catch_image"
-            app:layout_constraintStart_toStartOf="@+id/catch_image"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
@@ -156,8 +158,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="@string/initializing_message"
-            app:layout_constraintEnd_toEndOf="@+id/catch_image"
-            app:layout_constraintStart_toStartOf="@+id/catch_image"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/catch_image" />
     </android.support.constraint.ConstraintLayout>
 
