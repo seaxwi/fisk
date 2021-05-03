@@ -75,6 +75,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     private AudioManager am;
 
+    private Fish[] fishArray;
 
     // Other
     private Random rd;
@@ -108,7 +109,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         //create fish array
-        Fish[] fishArray = createFishArray();
+        fishArray = createFishArray();
 
         /* Setup sensor */
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
