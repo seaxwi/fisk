@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#1891E6"
-    tools:context=".ViewFish">
+    tools:context=".ViewFishActivity">
 
     <ImageView
         android:id="@+id/yellow_fish"

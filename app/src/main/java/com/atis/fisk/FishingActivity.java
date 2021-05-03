@@ -73,7 +73,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Button
     private Button reelButton;
 
-    // final MediaPlayer mp = MediaPlayer.create(this, R.raw.);
     private AudioManager am;
 
 
@@ -82,9 +81,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     // Sensor Arrays
     private double[] linear_acceleration;
-    private double[] top_accelerations_split;
-    private double[] top_accelerations_total;
-    private double[] top_accelerations_cast;
+    private double[] top_accelerations_split; // debugging only
+    private double[] top_accelerations_total; // debugging only
+    private double[] top_accelerations_cast; // top casting acceleration
     private double[] rotations;
 
     // Cast values
@@ -134,7 +133,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         castModeView = (TextView) findViewById(R.id.cast_mode);
 
         reelButton = findViewById(R.id.btn_reel);
-        int reelStreamId;
         // https://stackoverflow.com/questions/47107105/android-button-has-setontouchlistener-called-on-it-but-does-not-override-perform
         reelButton.setOnTouchListener(new View.OnTouchListener() {
 
@@ -261,7 +259,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                     public void run() {
                         // a potentially time consuming task
                         int sound = soundPool.play(sound_click, 1, 1, 0, -1, 1.5f);
-                        while (lineLength < (top_accelerations_cast[3] / 3)) { // TODO: This is prone to glitches, like counter reeling
+                        while (lineLength < (top_accelerations_cast[3] / 3)) { // TODO: This is prone to glitches, like counter reelingz§
                             lineLength += 0.1;
                             SystemClock.sleep(10);
                         }
