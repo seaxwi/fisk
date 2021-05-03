@@ -18,4 +18,9 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
 
     }
+    public void clickedViewCatch (View view){
+        Intent intent = new Intent (this , ViewFish.class);
+        startActivity(intent);
+
+    }
 }

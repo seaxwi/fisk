@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:clickable="false"
-        android:onClick="clickedStart"
+        android:onClick="clickedViewCatch"
         android:text="@string/view_catch"
         app:layout_constraintEnd_toEndOf="@+id/startButton"
         app:layout_constraintStart_toStartOf="@+id/startButton"

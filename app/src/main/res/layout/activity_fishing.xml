@@ -13,6 +13,7 @@
         android:id="@+id/start_waves"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="#202020"
         android:contentDescription="An animated background with waves."
         android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
