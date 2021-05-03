@@ -558,7 +558,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     private Fish determineCaughtFish(Fish[] fishArray){
         int randomNumber = rd.nextInt(55);
-        Fish result = null;
+        Fish result = fishArray[0];
         for(Fish f : fishArray){
             if(f.getWeight()<randomNumber){
                 result = f;
