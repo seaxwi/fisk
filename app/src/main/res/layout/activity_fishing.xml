@@ -9,19 +9,6 @@
     app:layoutDescription="@xml/activity_fishing_scene"
     tools:context=".FishingActivity">
 
-    <ImageView
-        android:id="@+id/start_waves"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="#202020"
-        android:contentDescription="An animated background with waves."
-        android:scaleType="fitXY"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/waves1" />
-
     <Button
         android:id="@+id/btn_reel"
         android:layout_width="wrap_content"
@@ -44,6 +31,19 @@
         android:src="@android:drawable/ic_menu_info_details"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/start_waves"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#202020"
+        android:contentDescription="An animated background with waves."
+        android:scaleType="fitXY"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/waves1" />
 
     <TextView
         android:id="@+id/line_length"
@@ -114,6 +114,48 @@
             android:text="@string/initializing_message"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+    </android.support.constraint.ConstraintLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/fish_display_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:padding="16"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/catch_mesage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You caught something!"
+            app:layout_constraintEnd_toEndOf="@+id/catch_image"
+            app:layout_constraintStart_toStartOf="@+id/catch_image"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/catch_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/catch_mesage"
+            app:srcCompat="@drawable/ic_launcher_foreground" />
+
+        <TextView
+            android:id="@+id/catch_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/initializing_message"
+            app:layout_constraintEnd_toEndOf="@+id/catch_image"
+            app:layout_constraintStart_toStartOf="@+id/catch_image"
+            app:layout_constraintTop_toBottomOf="@+id/catch_image" />
     </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>
