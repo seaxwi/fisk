@@ -107,6 +107,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
+        //create fishArray
+        Fish[] fishArray = createFishArray();
+
         /* Setup sensor */
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         linearAccelerationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
@@ -477,5 +480,32 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     @SuppressWarnings("deprecation")
     protected SoundPool createOldSoundPool(){
         return new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
+    }
+
+    private Fish[] createFishArray(){
+        //create empty fishArray
+        Fish[] fishArray = new Fish[8];
+
+        //create fish objects
+        Fish pinkFish = new Fish("Pink Fish", R.id.pink_fish, 10);
+        Fish blueFish = new Fish("Blue Fish", R.id.blue_fish, 10);
+        Fish yellowFish = new Fish("Yellow Fish", R.id.yellow_fish, 10);
+        Fish flounder = new Fish("Flounder", R.id.flounder, 10);
+        Fish crab = new Fish("Crab", R.id.crab, 10);
+        Fish jellyfish = new Fish("Jellyfish", R.id.jellyfish, 10);
+        Fish seahorse = new Fish("Seahorse", R.id.seahorse, 10);
+        Fish tinCan = new Fish("Tin Can", R.id.tin_can, 10);
+
+        //add fish objects to array
+        fishArray[0] = pinkFish;
+        fishArray[1] = blueFish;
+        fishArray[2] = yellowFish;
+        fishArray[3] = flounder;
+        fishArray[4] = crab;
+        fishArray[5] = jellyfish;
+        fishArray[6] = seahorse;
+        fishArray[7] = tinCan;
+
+        return fishArray;
     }
 }
