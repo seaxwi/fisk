@@ -304,8 +304,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
 
                 // Testing catchView
-                int fishID = rd.nextInt(8);
-                Fish caughtFish = fishArray[fishID];
+                Fish caughtFish = determineCaughtFish(fishArray);
                 Log.w(TAG, "Caught fish " + caughtFish.getName() + "!");
 
                 // TODO
@@ -535,14 +534,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Fish[] fishArray = new Fish[8];
 
         //create fish objects
-        Fish pinkFish = new Fish("Pink Fish", R.drawable.pink_fish, 10);
-        Fish blueFish = new Fish("Blue Fish", R.drawable.blue_fish, 10);
-        Fish yellowFish = new Fish("Yellow Fish", R.drawable.yellow_fish, 10);
-        Fish flounder = new Fish("Flounder", R.drawable.flounder, 10);
-        Fish crab = new Fish("Crab", R.drawable.crab, 10);
-        Fish jellyfish = new Fish("Jellyfish", R.drawable.jellyfish, 10);
-        Fish seahorse = new Fish("Seahorse", R.drawable.seahorse, 10);
-        Fish tinCan = new Fish("Tin Can", R.drawable.tin_can, 10);
+        Fish pinkFish = new Fish("Pink Fish", R.drawable.pink_fish, 15);
+        Fish blueFish = new Fish("Blue Fish", R.drawable.blue_fish, 25);
+        Fish yellowFish = new Fish("Yellow Fish", R.drawable.yellow_fish, 35);
+        Fish flounder = new Fish("Flounder", R.drawable.flounder, 40);
+        Fish crab = new Fish("Crab", R.drawable.crab, 45);
+        Fish jellyfish = new Fish("Jellyfish", R.drawable.jellyfish, 50);
+        Fish seahorse = new Fish("Seahorse", R.drawable.seahorse, 55);
+        Fish tinCan = new Fish("Tin Can", R.drawable.tin_can, 5);
 
         //add fish objects to array
         fishArray[0] = pinkFish;
@@ -555,5 +554,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         fishArray[7] = tinCan;
 
         return fishArray;
+    }
+
+    private Fish determineCaughtFish(Fish[] fishArray){
+        int randomNumber = rd.nextInt(55);
+        Fish result = null;
+        for(Fish f : fishArray){
+            if(f.getWeight()<randomNumber){
+                result = f;
+            }
+        }
+        return result;
     }
 }
