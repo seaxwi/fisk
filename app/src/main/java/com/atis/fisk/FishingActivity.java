@@ -3,9 +3,7 @@ package com.atis.fisk;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.drawable.AnimationDrawable;
-import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -26,6 +24,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -33,18 +32,29 @@ import java.util.Random;
 public class FishingActivity extends AppCompatActivity implements SensorEventListener {
     private static final String TAG = "FishingActivity";
 
+    private final double PARAMETER_PRIMING_ANGLE = Math.toRadians(45);
+    private final double PARAMETER_PRIMING_ANGLE_THRESHOLD = Math.toRadians(10);
+    private final float PARAMETER_CASTING_ACCELERATION_LIMIT = 30;
+    private final float PARAMETER_CASTING_ACCELERATION_THRESHOLD= 10;
 
-    private static int CAST_MODE_LOADING = -1;
-    private static int CAST_MODE_IDLE = 0;
-    private static int CAST_MODE_PRIMED = 1;
-    private static int CAST_MODE_CASTING = 2;
-    private static int CAST_MODE_AIRBORNE = 3;
-    private static int CAST_MODE_IN_WATER = 4;
+    private static final int CAST_MODE_LOADING = -1;
+    private static final int CAST_MODE_IDLE = 0;
+    private static final int CAST_MODE_PRIMED = 1;
+    private static final int CAST_MODE_CASTING = 2;
+    private static final int CAST_MODE_AIRBORNE = 3;
+    private static final int CAST_MODE_FISHING = 4;
 
-    private static int REED_MODE_BLOCKED = -1;
-    private static int REED_MODE_IDLE = 0;
-    private static int REED_MODE_STARTING = 1;
-    private static int REED_MODE_REELING = 2;
+    private static final int FISHING_MODE_BLOCKED = -2;
+    private static final int FISHING_MODE_NONE = -1;
+    private static final int FISHING_MODE_SPLASH = 0;
+    private static final int FISHING_MODE_WAITING = 1;
+    private static final int FISHING_MODE_APPROACH = 2;
+    private static final int FISHING_MODE_ACTIVE = 3;
+
+    private static final int REED_MODE_BLOCKED = -1;
+    private static final int REED_MODE_IDLE = 0;
+    private static final int REED_MODE_STARTING = 1;
+    private static final int REED_MODE_REELING = 2;
 
     // Sound
     private SoundPool soundPool;
@@ -80,11 +90,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Button
     private Button reelButton;
 
-    private AudioManager am;
-
-    private Fish[] fishArray;
+    private FishEntry[] fishEntryArray;
+    private FishEntry activeFish = null;
 
     // Other
+    DecimalFormat df = new DecimalFormat("#.#"); // debug
     private Random rd;
 
     // Sensor Arrays
@@ -94,11 +104,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double[] top_accelerations_cast; // top casting acceleration
     private double[] rotations;
 
-    // Cast values
+    // Sensor loop control
     private int castMode = CAST_MODE_LOADING;
     private int reedMode = REED_MODE_BLOCKED;
-    private double castPrimeThresholdAngle = Math.toRadians(45);
-    private double castPrimeThresholdAngleBuffer = Math.toRadians(10);
+    private int fishingMode = FISHING_MODE_NONE;
     private double lineLength = 0;
 
     // Sounds
@@ -111,13 +120,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fishing);
 
-        debugViewLayout = (ConstraintLayout) findViewById(R.id.debug_values);
-        catchViewLayout = (ConstraintLayout) findViewById(R.id.fish_display_layout);
+        debugViewLayout = findViewById(R.id.debug_values);
+        catchViewLayout = findViewById(R.id.fish_display_layout);
 
-        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
-        //create fish array
-        fishArray = createFishArray();
+        // Fish stuff
+        fishEntryArray = createFishArray();
 
         /* Setup sensor */
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -139,10 +146,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // Wait for sensor to calibrate or something (TODO: Check if needed)
         SystemClock.sleep(100);
 
-        xzyDebug = (TextView) findViewById(R.id.acc_values_xyz);
-        totalDebug = (TextView) findViewById(R.id.acc_values_total);
-        rotationView = (TextView) findViewById(R.id.rotation_value);
-        castModeView = (TextView) findViewById(R.id.cast_mode);
+        xzyDebug = findViewById(R.id.acc_values_xyz);
+        totalDebug = findViewById(R.id.acc_values_total);
+        rotationView = findViewById(R.id.rotation_value);
+        castModeView = findViewById(R.id.cast_mode);
 
         reelButton = findViewById(R.id.btn_reel);
         // https://stackoverflow.com/questions/47107105/android-button-has-setontouchlistener-called-on-it-but-does-not-override-perform
@@ -170,8 +177,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         top_accelerations_cast = new double[4];
         rotations = new double[3];
 
-        backgroundView = (ImageView) findViewById(R.id.start_waves);
-        lineLengthView = (TextView) findViewById(R.id.line_length);
+        backgroundView = findViewById(R.id.start_waves);
+        lineLengthView = findViewById(R.id.line_length);
 
         catchImage = findViewById(R.id.catch_image);
         catchName = findViewById(R.id.catch_name);
@@ -239,7 +246,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             }
         }
 
-        if (castMode == CAST_MODE_IDLE && rotations[2] > castPrimeThresholdAngle + castPrimeThresholdAngleBuffer / 2) {
+        if (castMode == CAST_MODE_IDLE && rotations[2] > PARAMETER_PRIMING_ANGLE + PARAMETER_PRIMING_ANGLE_THRESHOLD / 2) {
             setCastMode(CAST_MODE_PRIMED);
             soundPool.play(sound_prime, 1, 1, 0, 0, 1);
             vibrator.vibrate(100);
@@ -247,9 +254,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         if (castMode == CAST_MODE_PRIMED) {
 
-            if (rotations[2] < castPrimeThresholdAngle - castPrimeThresholdAngleBuffer / 2) {
+            if (rotations[2] < PARAMETER_PRIMING_ANGLE - PARAMETER_PRIMING_ANGLE_THRESHOLD / 2) {
 
-                if (linear_acceleration[3] > 30 + 10) {
+                Log.w(TAG, "Priming angle crossed with an acceleration of " + df.format(linear_acceleration[3]) + "!");
+                if (linear_acceleration[3] > PARAMETER_CASTING_ACCELERATION_LIMIT + PARAMETER_CASTING_ACCELERATION_THRESHOLD / 2) {
+                    Log.w(TAG, "Filling top_accelerations_cast[] with zeroes...");
                     Arrays.fill(top_accelerations_cast, 0);
                     setCastMode(CAST_MODE_CASTING);
                     soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
@@ -258,63 +267,141 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                     soundPool.play(sound_idle, 1, 1, 0, 0, 1);
                     vibrator.vibrate(100);
                 }
-
             }
-
-
         }
 
         if (castMode == CAST_MODE_CASTING) {
 
-            if(linear_acceleration[3] < 30) {
+            // Wait until accleration drops below threshold
+            if(linear_acceleration[3] < PARAMETER_CASTING_ACCELERATION_LIMIT - PARAMETER_CASTING_ACCELERATION_THRESHOLD / 2) {
                 vibrator.vibrate(1000);
-                Log.w(TAG, "Cast: " + Arrays.toString(top_accelerations_cast));
+                Log.w(TAG, "Succesful cast! Top cast acceleration: " + df.format(top_accelerations_cast[3]));
 
                 new Thread(new Runnable() {
                     public void run() {
-                        // a potentially time consuming task
+                        setCastMode(CAST_MODE_AIRBORNE);
                         int sound = soundPool.play(sound_click, 1, 1, 0, -1, 1.5f);
-                        while (lineLength < (top_accelerations_cast[3] / 3)) { // TODO: This is prone to glitches, like counter reelingz§
+                        while (lineLength < (top_accelerations_cast[3] / 3)) { // TODO: This is prone to glitches, like counter reeling
                             lineLength += 0.1;
                             SystemClock.sleep(10);
                         }
                         soundPool.stop(sound);
+                        setFishingMode(FISHING_MODE_SPLASH);
+                        setCastMode(CAST_MODE_FISHING);
                     }
                 }).start();
-
-                setCastMode(CAST_MODE_AIRBORNE);
             }
         }
 
         if(castMode == CAST_MODE_AIRBORNE) {
 
-            if(lineLength > (top_accelerations_cast[3] / 3)) {
-                soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                setCastMode(CAST_MODE_IN_WATER);
-            }
+            // Does nothing for now. Loop stays idle until castMode is changed
+
         }
 
-        if(castMode == CAST_MODE_IN_WATER) {
+        // This branches into the fishing branch (FISH_MODE_*)
+        // TODO: Sensors could be paused while waiting for fish
+        if(castMode == CAST_MODE_FISHING) {
 
-            // TODO: More fish stuff?
+            // SPLASH!
+            if(fishingMode == FISHING_MODE_SPLASH) {
+                soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
+                setFishingMode(FISHING_MODE_NONE);
+            }
 
+            if(fishingMode == FISHING_MODE_NONE) {
+
+                // Start random wait thread
+                setFishingMode(FISHING_MODE_WAITING);
+                new Thread(new Runnable() {
+                    public void run() {
+                        long wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
+                        Log.w(TAG, "Waiting " + wait / 1000 + " seconds.");
+                        while (castMode == CAST_MODE_FISHING && fishingMode != FISHING_MODE_BLOCKED) {
+
+                            if (wait >= 0) {
+                                // Splash at T-minus 1s
+                                if (wait / 100 == 10) {
+                                    soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
+                                }
+                                // Vibrations when t<2s
+                                if (wait <= 2000 && wait % 500 == 0) {
+                                    vibrator.vibrate(50);
+                                }
+
+                                SystemClock.sleep(100);
+                                wait -= 100;
+
+                                // Reset wait if reeling
+                                if (reedMode == REED_MODE_REELING) {
+                                    Log.w(TAG, "You reeled in to soon, fish didn't bite...");
+                                } else {
+                                    // FISH BITES THE HOOK
+                                    setFishingMode(FISHING_MODE_ACTIVE);
+                                }
+                            }
+                        }
+                    }
+                }).start();
+            }
+
+            if (fishingMode == FISHING_MODE_WAITING) {
+
+                // setFishingMode(FISHING_MODE_ACTIVE);
+                activeFish = determineCaughtFish(fishEntryArray);
+
+                new Thread(new Runnable() {
+                    public void run() {
+                        long wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
+                        Log.w(TAG, "Waiting " + wait / 1000 + " seconds.");
+                        while (castMode == CAST_MODE_FISHING && fishingMode != FISHING_MODE_BLOCKED) {
+
+                            vibrator.vibrate(1000);
+                            SystemClock.sleep(1000);
+                            int idleTime = 0;
+
+                            if (reedMode != REED_MODE_REELING) {
+                                idleTime += 10;
+                                SystemClock.sleep(10);
+                            } else {
+                                vibrator.vibrate(100);
+                                lineLength += 1;
+                                SystemClock.sleep(100);
+                                idleTime += 100;
+                            }
+
+                            if (idleTime > 1000) {
+                                activeFish = null;
+                                Log.w(TAG, "Fish got away...");
+                            }
+                            // setFishingMode(FISHING_MODE_WAITING);
+                        }
+                    }
+                }).start();
+            }
+
+            // LINE REELED IN
             if(lineLength <= 0) {
+                // Make sure line is 0 and not negative
                 lineLength = 0;
-                setCastMode(CAST_MODE_IDLE);
                 soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
 
-                // Testing catchView
-                Fish caughtFish = determineCaughtFish(fishArray);
-                Log.w(TAG, "Caught fish " + caughtFish.getName() + "!");
+                // Check for fish
+                if(castMode == CAST_MODE_FISHING) {
+                    if (activeFish == null) {
+                        Log.w(TAG, "You didn't catch anything.");
+                    } else {
+                        Log.w(TAG, "You caught a " + activeFish.getName() + "!");
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            catchImage.setImageDrawable(getDrawable(activeFish.getResourceID()));
+                        }
+                        catchName.setText(activeFish.getName());
 
-                // TODO
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    Log.w(TAG, "Drawing image of caught fish...");
-                    catchImage.setImageDrawable(getDrawable(caughtFish.getResourceID()));
+                        setCatchViewVisibility(true);
+                    }
+                    setFishingMode(FISHING_MODE_BLOCKED); // ?
+                    setCastMode(CAST_MODE_IDLE);
                 }
-                catchName.setText(caughtFish.getName());
-
-                setCatchViewVisibility(true);
             }
         }
 
@@ -326,11 +413,13 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 public void run() {
                     // a potentially time consuming task
                     int sound = soundPool.play(sound_reel, 1, 1, 0, 0, 1);
+                    Log.w(TAG, "Reeling...");
                     while (lineLength > 0 && reedMode == REED_MODE_REELING) {
 
                         lineLength -= 0.1;
                         SystemClock.sleep(10);
                     }
+                    Log.w(TAG, "...stopped reeling.");
                     soundPool.stop(sound);
                 }
             }).start();
@@ -491,15 +580,25 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Log.w(TAG, "CAST_MODE: " + this.castMode + " -> " + castMode);
         this.castMode = castMode;
         castModeView.setText(getString(R.string.cast_mode, this.castMode));
+        if(castMode != CAST_MODE_FISHING) {
+            setFishingMode(FISHING_MODE_BLOCKED);
+        }
+    }
+
+    public void setFishingMode(int fishingMode) {
+        Log.w(TAG, "FISHING_MODE: " + this.fishingMode + " -> " + fishingMode);
+        this.fishingMode = fishingMode;
     }
 
     public void setReedMode(int reedMode) {
-        Log.w(TAG, "REEL_MODE: " + this.reedMode + " -> " + reedMode);
+        // Log.w(TAG, "REEL_MODE: " + this.reedMode + " -> " + reedMode);
         this.reedMode = reedMode;
         if(reedMode == REED_MODE_STARTING) {
             reelStreamId = soundPool.play(sound_reel, 1, 1, 0, -1, 1);
+            setFishingMode(FISHING_MODE_BLOCKED);
         } else {
             soundPool.stop(reelStreamId);
+            setFishingMode(FISHING_MODE_NONE);
         }
     }
 
@@ -529,53 +628,53 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         return new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
     }
 
-    private Fish[] createFishArray(){
+    private FishEntry[] createFishArray(){
         //create empty fishArray
-        Fish[] fishArray = new Fish[8];
+        FishEntry[] fishEntryArray = new FishEntry[9];
 
         //create fish objects
-        Fish pinkFish = new Fish("Pink Fish", R.drawable.pink_fish, 1);
-        Fish blueFish = new Fish("Blue Fish", R.drawable.blue_fish, 1);
-        Fish yellowFish = new Fish("Yellow Fish", R.drawable.yellow_fish, 1);
-        Fish flounder = new Fish("Flounder", R.drawable.flounder, 3);
-        Fish crab = new Fish("Crab", R.drawable.crab, 3);
-        Fish jellyfish = new Fish("Jellyfish", R.drawable.jellyfish, 3);
-        Fish seahorse = new Fish("Seahorse", R.drawable.seahorse, 3);
-        Fish tinCan = new Fish("Tin Can", R.drawable.tin_can, 5);
+        FishEntry unknown = new FishEntry("???", R.drawable.unknown_fish, 0);
+        FishEntry pinkFish = new FishEntry("Pink Fish", R.drawable.pink_fish, 1);
+        FishEntry blueFish = new FishEntry("Blue Fish", R.drawable.blue_fish, 1);
+        FishEntry yellowFish = new FishEntry("Yellow Fish", R.drawable.yellow_fish, 1);
+        FishEntry flounder = new FishEntry("Flounder", R.drawable.flounder, 3);
+        FishEntry crab = new FishEntry("Crab", R.drawable.crab, 3);
+        FishEntry jellyfish = new FishEntry("Jellyfish", R.drawable.jellyfish, 3);
+        FishEntry seahorse = new FishEntry("Seahorse", R.drawable.seahorse, 3);
+        FishEntry tinCan = new FishEntry("Tin Can", R.drawable.tin_can, 5);
 
         //add fish objects to array
-        fishArray[0] = pinkFish;
-        fishArray[1] = blueFish;
-        fishArray[2] = yellowFish;
-        fishArray[3] = flounder;
-        fishArray[4] = crab;
-        fishArray[5] = jellyfish;
-        fishArray[6] = seahorse;
-        fishArray[7] = tinCan;
+        fishEntryArray[0] = pinkFish;
+        fishEntryArray[1] = blueFish;
+        fishEntryArray[2] = yellowFish;
+        fishEntryArray[3] = flounder;
+        fishEntryArray[4] = crab;
+        fishEntryArray[5] = jellyfish;
+        fishEntryArray[6] = seahorse;
+        fishEntryArray[7] = tinCan;
+        fishEntryArray[8] = unknown; // ???
 
-        return fishArray;
+        return fishEntryArray;
     }
 
-    private Fish determineCaughtFish(Fish[] fishArray){
+    private FishEntry determineCaughtFish(FishEntry[] fishEntryArray){
 
-        int weightSum = 0;
-        for(Fish f: fishArray) {
-            weightSum += f.getWeight();
+        int totalWeight = 0;
+        for(FishEntry f: fishEntryArray) {
+            totalWeight += f.getWeight();
         }
 
-        Log.w(TAG, "weightsum: " + weightSum);
+        int randomWeight = rd.nextInt(totalWeight);
 
-        int randomNumber = rd.nextInt(weightSum);
-
-        for(Fish f: fishArray) {
+        for(FishEntry f: fishEntryArray) {
             int fishWeight = f.getWeight();
-            if(randomNumber > fishWeight) {
-                randomNumber -= fishWeight;
+            if(randomWeight > fishWeight) {
+                randomWeight -= fishWeight;
             } else {
                 return f;
             }
         }
         Log.w(TAG, "Fail");
-        return fishArray[7];
+        return fishEntryArray[7];
     }
 }
