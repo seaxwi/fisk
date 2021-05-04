@@ -44,11 +44,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private static final int CAST_MODE_AIRBORNE = 3;
     private static final int CAST_MODE_FISHING = 4;
 
-    private static final int FISHING_MODE_BLOCKED = -2;
-    private static final int FISHING_MODE_NONE = -1;
+    private static final int FISHING_MODE_NONE = -2;
+    private static final int FISHING_MODE_IDLE = -1;
     private static final int FISHING_MODE_SPLASH = 0;
-    private static final int FISHING_MODE_WAITING = 1;
-    private static final int FISHING_MODE_APPROACH = 2;
     private static final int FISHING_MODE_ACTIVE = 3;
 
     private static final int REED_MODE_BLOCKED = -1;
@@ -107,7 +105,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Sensor loop control
     private int castMode = CAST_MODE_LOADING;
     private int reedMode = REED_MODE_BLOCKED;
-    private int fishingMode = FISHING_MODE_NONE;
+    private int fishingMode = FISHING_MODE_IDLE;
     private double lineLength = 0;
 
     // Sounds
@@ -306,75 +304,71 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             // SPLASH!
             if(fishingMode == FISHING_MODE_SPLASH) {
                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                setFishingMode(FISHING_MODE_NONE);
+                setFishingMode(FISHING_MODE_IDLE);
             }
 
-            if(fishingMode == FISHING_MODE_NONE) {
+            if(fishingMode == FISHING_MODE_IDLE) {
 
-                // Start random wait thread
-                setFishingMode(FISHING_MODE_WAITING);
+                // Start thread and wait
+                setFishingMode(FISHING_MODE_NONE);
                 new Thread(new Runnable() {
                     public void run() {
                         long wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
-                        Log.w(TAG, "Waiting " + wait / 1000 + " seconds.");
-                        while (castMode == CAST_MODE_FISHING && fishingMode != FISHING_MODE_BLOCKED) {
+                        Log.w(TAG, "Fish will approach in " + wait / 1000 + " seconds. Waiting...");
+                        while (fishingMode == CAST_MODE_FISHING && wait < 0) {
 
-                            if (wait >= 0) {
-                                // Splash at T-minus 1s
-                                if (wait / 100 == 10) {
-                                    soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                                }
-                                // Vibrations when t<2s
-                                if (wait <= 2000 && wait % 500 == 0) {
-                                    vibrator.vibrate(50);
-                                }
+                            // Splash at T-minus 1s
+                            if (wait / 100 == 10) {
+                                soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
+                            }
+                            // Vibrations when t<2s
+                            if (wait <= 2000 && wait % 500 == 0) {
+                                vibrator.vibrate(50);
+                            }
 
-                                SystemClock.sleep(100);
-                                wait -= 100;
+                            SystemClock.sleep(100);
+                            wait -= 100;
 
-                                // Reset wait if reeling
-                                if (reedMode == REED_MODE_REELING) {
-                                    Log.w(TAG, "You reeled in to soon, fish didn't bite...");
-                                } else {
-                                    // FISH BITES THE HOOK
-                                    setFishingMode(FISHING_MODE_ACTIVE);
-                                }
+                            // Reset wait if reeling
+                            if (reedMode == REED_MODE_REELING && ) {
+                                SystemClock.sleep(1000);
+                                wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
                             }
                         }
+                        // FISH BITES THE HOOK
+                        setFishingMode(FISHING_MODE_ACTIVE);
                     }
                 }).start();
             }
 
-            if (fishingMode == FISHING_MODE_WAITING) {
+            if (fishingMode == FISHING_MODE_ACTIVE) {
 
-                // setFishingMode(FISHING_MODE_ACTIVE);
-                activeFish = determineCaughtFish(fishEntryArray);
-
+                // Starting new thread and waiting
+                setFishingMode(FISHING_MODE_NONE);
                 new Thread(new Runnable() {
                     public void run() {
-                        long wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
-                        Log.w(TAG, "Waiting " + wait / 1000 + " seconds.");
-                        while (castMode == CAST_MODE_FISHING && fishingMode != FISHING_MODE_BLOCKED) {
-
-                            vibrator.vibrate(1000);
-                            SystemClock.sleep(1000);
-                            int idleTime = 0;
+                        activeFish = determineCaughtFish(fishEntryArray);
+                        Log.w(TAG, "Fish detected! Start reeling!");
+                        vibrator.vibrate(1000);
+                        SystemClock.sleep(1000);
+                        int timeUntilFishEscape = 3000;
+                        while (fishingMode == FISHING_MODE_ACTIVE) {
 
                             if (reedMode != REED_MODE_REELING) {
-                                idleTime += 10;
-                                SystemClock.sleep(10);
-                            } else {
                                 vibrator.vibrate(100);
-                                lineLength += 1;
-                                SystemClock.sleep(100);
-                                idleTime += 100;
+                                SystemClock.sleep(200);
+                                timeUntilFishEscape += 200;
+
                             }
 
-                            if (idleTime > 1000) {
+                            if(timeUntilFishEscape <= 0) {
+                                // Fish got away
                                 activeFish = null;
                                 Log.w(TAG, "Fish got away...");
+                                setFishingMode(FISHING_MODE_IDLE);
                             }
-                            // setFishingMode(FISHING_MODE_WAITING);
+
+                            // Log.w(TAG, "You reeled in to soon, fish didn't bite...");
                         }
                     }
                 }).start();
@@ -399,7 +393,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                         setCatchViewVisibility(true);
                     }
-                    setFishingMode(FISHING_MODE_BLOCKED); // ?
                     setCastMode(CAST_MODE_IDLE);
                 }
             }
@@ -580,8 +573,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Log.w(TAG, "CAST_MODE: " + this.castMode + " -> " + castMode);
         this.castMode = castMode;
         castModeView.setText(getString(R.string.cast_mode, this.castMode));
-        if(castMode != CAST_MODE_FISHING) {
-            setFishingMode(FISHING_MODE_BLOCKED);
+        if(castMode == CAST_MODE_FISHING) {
+            setFishingMode(FISHING_MODE_SPLASH);
+        } else {
+            setFishingMode(FISHING_MODE_NONE);
         }
     }
 
@@ -595,10 +590,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         this.reedMode = reedMode;
         if(reedMode == REED_MODE_STARTING) {
             reelStreamId = soundPool.play(sound_reel, 1, 1, 0, -1, 1);
-            setFishingMode(FISHING_MODE_BLOCKED);
+            setFishingMode(FISHING_MODE_NONE);
         } else {
             soundPool.stop(reelStreamId);
-            setFishingMode(FISHING_MODE_NONE);
+            setFishingMode(FISHING_MODE_IDLE);
         }
     }
 
