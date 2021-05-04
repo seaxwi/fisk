@@ -1,11 +1,11 @@
 package com.atis.fisk;
 
-public class Fish {
+public class FishEntry {
     private String name;
     private int resourceID;
     private int weight;
 
-    public Fish(String name, int resourceID, int weight){
+    public FishEntry(String name, int resourceID, int weight){
         this.name = name;
         this.resourceID = resourceID;
         this.weight = weight;
