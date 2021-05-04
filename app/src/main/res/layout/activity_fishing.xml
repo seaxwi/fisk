@@ -29,9 +29,27 @@
         android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
         app:srcCompat="@drawable/waves1" />
+
+    <ImageView
+        android:id="@+id/instructions"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#202020"
+        android:contentDescription="Animated instructions."
+        app:layout_constraintBottom_toTopOf="@+id/line_length"
+        app:layout_constraintTop_toTopOf="@+id/start_waves"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="250dp"
+        android:layout_marginRight="20dp"
+        app:srcCompat="@drawable/angle_man" />
 
     <ImageButton
         android:id="@+id/debug_button"
@@ -56,6 +74,7 @@
         app:layout_constraintBottom_toTopOf="@+id/btn_reel"
         app:layout_constraintEnd_toEndOf="@+id/btn_reel"
         app:layout_constraintStart_toStartOf="@+id/btn_reel" />
+
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/debug_values"
@@ -164,6 +183,7 @@
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/catch_image" />
+
     </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>

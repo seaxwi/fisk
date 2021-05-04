@@ -26,7 +26,9 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 
@@ -72,10 +74,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private TextView xzyDebug;
     private TextView totalDebug;
     private ImageView backgroundView;
+    private ImageView instructionsView;
     private TextView lineLengthView;
     private TextView rotationView;
     private TextView castModeView;
     private AnimationDrawable wavesAnimation;
+    private AnimationDrawable instructionsAnimation;
 
     // Button
     private Button reelButton;
@@ -172,6 +176,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         backgroundView = (ImageView) findViewById(R.id.start_waves);
         lineLengthView = (TextView) findViewById(R.id.line_length);
+        instructionsView = (ImageView) findViewById(R.id.instructions);
+
 
         catchImage = findViewById(R.id.catch_image);
         catchName = findViewById(R.id.catch_name);
@@ -181,9 +187,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // Prepare animation
         backgroundView.setBackgroundResource(R.drawable.waves);
         wavesAnimation = (AnimationDrawable) backgroundView.getBackground();
+        instructionsView.setBackgroundResource(R.drawable.instructions);
+        instructionsAnimation = (AnimationDrawable) instructionsView.getBackground();
 
         // Remove placeholder background
         backgroundView.setImageDrawable(null);
+        instructionsView.setImageDrawable(null);
 
         // Intent?
         bgSoundintent = new Intent(this, BackgroundSoundService.class);
@@ -191,6 +200,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // Start animation
         wavesAnimation.start();
+        instructionsAnimation.start();
+
+
 
         // Making sure
         setCastMode(CAST_MODE_IDLE);
@@ -217,6 +229,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // stop animation
         wavesAnimation.stop();
+        instructionsAnimation.stop();
 
         // stop other
         stopService(bgSoundintent);
@@ -243,6 +256,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             setCastMode(CAST_MODE_PRIMED);
             soundPool.play(sound_prime, 1, 1, 0, 0, 1);
             vibrator.vibrate(100);
+            instructionsView.setVisibility(View.INVISIBLE);
         }
 
         if (castMode == CAST_MODE_PRIMED) {
@@ -305,6 +319,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                 // Testing catchView
                 Fish caughtFish = determineCaughtFish(fishArray);
+
                 Log.w(TAG, "Caught fish " + caughtFish.getName() + "!");
 
                 // TODO
@@ -315,6 +330,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 catchName.setText(caughtFish.getName());
 
                 setCatchViewVisibility(true);
+
+
             }
         }
 
@@ -375,6 +392,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         wavesAnimation.start();
+        instructionsAnimation.start();
     }
 
     @Override
@@ -578,4 +596,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Log.w(TAG, "Fail");
         return fishArray[7];
     }
+
+
 }
