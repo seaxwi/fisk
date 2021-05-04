@@ -26,7 +26,6 @@ import android.widget.TextView;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 
 
@@ -45,7 +44,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private static final int CAST_MODE_AIRBORNE = 3;
     private static final int CAST_MODE_FISHING = 4;
 
-    private static final int FISHING_MODE_NONE = -2;
+    private static final int FISHING_MODE_WAIT_FOR_THREAD = -2;
     private static final int FISHING_MODE_IDLE = -1;
     private static final int FISHING_MODE_SPLASH = 0;
     private static final int FISHING_MODE_ACTIVE = 3;
@@ -106,7 +105,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double[] rotations;
 
     // Sensor loop control
-    private int castMode = CAST_MODE_LOADING;
+    private int castMode = CAST_MODE_IDLE;
     private int reedMode = REED_MODE_BLOCKED;
     private int fishingMode = FISHING_MODE_IDLE;
     private double lineLength = 0;
@@ -205,11 +204,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // Start animation
         wavesAnimation.start();
         instructionsAnimation.start();
-
-
-
-        // Making sure
-        setCastMode(CAST_MODE_IDLE);
     }
 
     @Override
@@ -267,9 +261,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             if (rotations[2] < PARAMETER_PRIMING_ANGLE - PARAMETER_PRIMING_ANGLE_THRESHOLD / 2) {
 
-                Log.w(TAG, "Priming angle crossed with an acceleration of " + df.format(linear_acceleration[3]) + "!");
+                float primingLimit = PARAMETER_CASTING_ACCELERATION_LIMIT + PARAMETER_CASTING_ACCELERATION_THRESHOLD / 2;
+                Log.w(TAG, "The acceleration (" + df.format(linear_acceleration[3]) + " m/s) was below the limit (" + df.format(primingLimit) + " m/s)");
                 if (linear_acceleration[3] > PARAMETER_CASTING_ACCELERATION_LIMIT + PARAMETER_CASTING_ACCELERATION_THRESHOLD / 2) {
-                    Log.w(TAG, "Filling top_accelerations_cast[] with zeroes...");
                     Arrays.fill(top_accelerations_cast, 0);
                     setCastMode(CAST_MODE_CASTING);
                     soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
@@ -286,7 +280,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             // Wait until accleration drops below threshold
             if(linear_acceleration[3] < PARAMETER_CASTING_ACCELERATION_LIMIT - PARAMETER_CASTING_ACCELERATION_THRESHOLD / 2) {
                 vibrator.vibrate(1000);
-                Log.w(TAG, "Succesful cast! Top cast acceleration: " + df.format(top_accelerations_cast[3]));
+                Log.w(TAG, "Succesful cast! Acceleration: " + df.format(top_accelerations_cast[3]) + "m/s");
 
                 new Thread(new Runnable() {
                     public void run() {
@@ -297,7 +291,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             SystemClock.sleep(10);
                         }
                         soundPool.stop(sound);
-                        setFishingMode(FISHING_MODE_SPLASH);
                         setCastMode(CAST_MODE_FISHING);
                     }
                 }).start();
@@ -320,15 +313,25 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 setFishingMode(FISHING_MODE_IDLE);
             }
 
+            if(fishingMode == FISHING_MODE_WAIT_FOR_THREAD) {
+                // Do nothing until fishingMode is changed
+            }
+
             if(fishingMode == FISHING_MODE_IDLE) {
 
                 // Start thread and wait
-                setFishingMode(FISHING_MODE_NONE);
+                setFishingMode(FISHING_MODE_WAIT_FOR_THREAD);
                 new Thread(new Runnable() {
                     public void run() {
                         long wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
                         Log.w(TAG, "Fish will approach in " + wait / 1000 + " seconds. Waiting...");
-                        while (fishingMode == CAST_MODE_FISHING && wait < 0) {
+                        while (wait > 0 && castMode == CAST_MODE_FISHING) {
+
+                            // Spawn fish at T-minus 3s
+                            if (wait < 3000 && activeFish == null) {
+                                Log.w(TAG, "A fish is approaching...");
+                                activeFish = determineCaughtFish(fishEntryArray);
+                            }
 
                             // Splash at T-minus 1s
                             if (wait / 100 == 10) {
@@ -344,12 +347,21 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                             // Reset wait if reeling
                             if (reedMode == REED_MODE_REELING) {
+                                if (activeFish != null) {
+                                    activeFish = null;
+                                    Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
+                                }
                                 SystemClock.sleep(1000);
                                 wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
                             }
                         }
-                        // FISH BITES THE HOOK
-                        setFishingMode(FISHING_MODE_ACTIVE);
+                        // Checking that we're still fishing (they line may have been retracted)
+                        if(activeFish != null) {
+                            // FISH BITES THE HOOK
+                            Log.w(TAG, "A fish is on the hook!");
+                            setFishingMode(FISHING_MODE_ACTIVE);
+                        }
+
                     }
                 }).start();
             }
@@ -357,10 +369,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (fishingMode == FISHING_MODE_ACTIVE) {
 
                 // Starting new thread and waiting
-                setFishingMode(FISHING_MODE_NONE);
+                setFishingMode(FISHING_MODE_WAIT_FOR_THREAD);
                 new Thread(new Runnable() {
                     public void run() {
-                        activeFish = determineCaughtFish(fishEntryArray);
                         Log.w(TAG, "Fish detected! Start reeling!");
                         vibrator.vibrate(1000);
                         SystemClock.sleep(1000);
@@ -380,8 +391,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                                 Log.w(TAG, "Fish got away...");
                                 setFishingMode(FISHING_MODE_IDLE);
                             }
-
-                            // Log.w(TAG, "You reeled in to soon, fish didn't bite...");
                         }
                     }
                 }).start();
@@ -403,15 +412,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             catchImage.setImageDrawable(getDrawable(activeFish.getResourceID()));
                         }
                         catchName.setText(activeFish.getName());
-
                         setCatchViewVisibility(true);
+                        // Release fish
+                        activeFish = null;
                     }
                     setCastMode(CAST_MODE_IDLE);
                 }
-                catchName.setText(activeFish.getName());
-
-                setCatchViewVisibility(true);
-
 
             }
         }
@@ -596,7 +602,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // This should only be true when line just hit water
         if(castMode == CAST_MODE_FISHING) {
             fishingMode = FISHING_MODE_SPLASH;
-            Log.w(TAG, "FISHING_MODE: " + this.fishingMode + " -> " + fishingMode);
+            Log.w(TAG, "+ FISHING_MODE: " + this.fishingMode + " -> " + fishingMode);
         }
     }
 
