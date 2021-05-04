@@ -343,7 +343,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             wait -= 100;
 
                             // Reset wait if reeling
-                            if (reedMode == REED_MODE_REELING && ) {
+                            if (reedMode == REED_MODE_REELING) {
                                 SystemClock.sleep(1000);
                                 wait = (10 + rd.nextInt(20)) * 1000; // 10-30 second wait
                             }
@@ -408,7 +408,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                     }
                     setCastMode(CAST_MODE_IDLE);
                 }
-                catchName.setText(caughtFish.getName());
+                catchName.setText(activeFish.getName());
 
                 setCatchViewVisibility(true);
 
@@ -592,10 +592,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Log.w(TAG, "CAST_MODE: " + this.castMode + " -> " + castMode);
         this.castMode = castMode;
         castModeView.setText(getString(R.string.cast_mode, this.castMode));
+
+        // This should only be true when line just hit water
         if(castMode == CAST_MODE_FISHING) {
-            setFishingMode(FISHING_MODE_SPLASH);
-        } else {
-            setFishingMode(FISHING_MODE_NONE);
+            fishingMode = FISHING_MODE_SPLASH;
+            Log.w(TAG, "FISHING_MODE: " + this.fishingMode + " -> " + fishingMode);
         }
     }
 
@@ -609,10 +610,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         this.reedMode = reedMode;
         if(reedMode == REED_MODE_STARTING) {
             reelStreamId = soundPool.play(sound_reel, 1, 1, 0, -1, 1);
-            setFishingMode(FISHING_MODE_NONE);
+            // setFishingMode(FISHING_MODE_NONE);
         } else {
             soundPool.stop(reelStreamId);
-            setFishingMode(FISHING_MODE_IDLE);
+            // setFishingMode(FISHING_MODE_IDLE);
         }
     }
 
