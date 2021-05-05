@@ -49,10 +49,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private static final int FISHING_MODE_SPLASH = 0;
     private static final int FISHING_MODE_ACTIVE = 3;
 
-    private static final int REED_MODE_BLOCKED = -1;
-    private static final int REED_MODE_IDLE = 0;
-    private static final int REED_MODE_STARTING = 1;
-    private static final int REED_MODE_REELING = 2;
+    private static final int REEL_MODE_BLOCKED = -1;
+    private static final int REEL_MODE_IDLE = 0;
+    private static final int REEL_MODE_STARTING = 1;
+    private static final int REEL_MODE_REELING = 2;
 
     // Sound
     private SoundPool soundPool;
@@ -106,7 +106,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     // Sensor loop control
     private int castMode = CAST_MODE_IDLE;
-    private int reedMode = REED_MODE_BLOCKED;
+    private int reelMode = REEL_MODE_BLOCKED;
     private int fishingMode = FISHING_MODE_IDLE;
     private double lineLength = 0;
 
@@ -158,10 +158,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
-                    setReedMode(REED_MODE_STARTING);
+                    setReelMode(REEL_MODE_STARTING);
                 }
                 if(event.getAction() == MotionEvent.ACTION_UP){
-                    setReedMode(REED_MODE_IDLE);
+                    setReelMode(REEL_MODE_IDLE);
                 }
                 return true;
             }
@@ -346,7 +346,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             wait -= 100;
 
                             // Reset wait if reeling
-                            if (reedMode == REED_MODE_REELING) {
+                            if (reelMode == REEL_MODE_REELING) {
                                 if (activeFish != null) {
                                     activeFish = null;
                                     Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
@@ -378,10 +378,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         int timeUntilFishEscape = 3000;
                         while (fishingMode == FISHING_MODE_ACTIVE) {
 
-                            if (reedMode != REED_MODE_REELING) {
+                            if (reelMode != REEL_MODE_REELING) {
                                 vibrator.vibrate(100);
                                 SystemClock.sleep(200);
-                                timeUntilFishEscape += 200;
+                                timeUntilFishEscape -= 200;
 
                             }
 
@@ -422,16 +422,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             }
         }
 
-        if (reedMode == REED_MODE_STARTING && lineLength > 0) {
+        if (reelMode == REEL_MODE_STARTING && lineLength > 0) {
 
-            setReedMode(REED_MODE_REELING);
+            setReelMode(REEL_MODE_REELING);
 
             new Thread(new Runnable() {
                 public void run() {
                     // a potentially time consuming task
                     int sound = soundPool.play(sound_reel, 1, 1, 0, 0, 1);
                     Log.w(TAG, "Reeling...");
-                    while (lineLength > 0 && reedMode == REED_MODE_REELING) {
+                    while (lineLength > 0 && reelMode == REEL_MODE_REELING) {
 
                         lineLength -= 0.1;
                         SystemClock.sleep(10);
@@ -611,10 +611,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         this.fishingMode = fishingMode;
     }
 
-    public void setReedMode(int reedMode) {
+    public void setReelMode(int reelMode) {
         // Log.w(TAG, "REEL_MODE: " + this.reedMode + " -> " + reedMode);
-        this.reedMode = reedMode;
-        if(reedMode == REED_MODE_STARTING) {
+        this.reelMode = reelMode;
+        if(reelMode == REEL_MODE_STARTING) {
             reelStreamId = soundPool.play(sound_reel, 1, 1, 0, -1, 1);
             // setFishingMode(FISHING_MODE_NONE);
         } else {
