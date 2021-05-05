@@ -75,6 +75,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Views
     private ConstraintLayout debugViewLayout;
     private ConstraintLayout catchViewLayout;
+    private ConstraintLayout castingInstructionsViewLayout;
+    private ConstraintLayout fishingInstructionsViewLayout;
+    private ConstraintLayout currentTutorialStep = null;
     private ImageView catchImage;
     private TextView catchName;
     private TextView xzyDebug;
@@ -122,7 +125,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         debugViewLayout = findViewById(R.id.debug_values);
         catchViewLayout = findViewById(R.id.fish_display_layout);
-
+        castingInstructionsViewLayout = findViewById(R.id.instructions_casting_layout);
+        fishingInstructionsViewLayout = findViewById(R.id.instructions_fishing_layout);
         // Fish stuff
         fishEntryArray = createFishArray();
 
@@ -187,9 +191,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-        // Prepare animation
+        // Background animation
         backgroundView.setBackgroundResource(R.drawable.waves);
         wavesAnimation = (AnimationDrawable) backgroundView.getBackground();
+
+        // Prepare instructions pop-up
         instructionsView.setBackgroundResource(R.drawable.instructions);
         instructionsAnimation = (AnimationDrawable) instructionsView.getBackground();
 
@@ -204,6 +210,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // Start animation
         wavesAnimation.start();
         instructionsAnimation.start();
+
+        // Start tutorial
+        nextTutorialStep(null);
     }
 
     @Override
@@ -227,6 +236,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // stop animation
         wavesAnimation.stop();
+        Log.w(TAG, "ANIMATION PAUSED.");
         instructionsAnimation.stop();
 
         // stop other
@@ -254,7 +264,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             setCastMode(CAST_MODE_PRIMED);
             soundPool.play(sound_prime, 1, 1, 0, 0, 1);
             vibrator.vibrate(100);
-            instructionsView.setVisibility(View.INVISIBLE);
+            Log.w(TAG, "HIDE ANIMATION");
+            castingInstructionsViewLayout.setVisibility(View.GONE);
         }
 
         if (castMode == CAST_MODE_PRIMED) {
@@ -262,12 +273,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (rotations[2] < PARAMETER_PRIMING_ANGLE - PARAMETER_PRIMING_ANGLE_THRESHOLD / 2) {
 
                 float primingLimit = PARAMETER_CASTING_ACCELERATION_LIMIT + PARAMETER_CASTING_ACCELERATION_THRESHOLD / 2;
-                Log.w(TAG, "The acceleration (" + df.format(linear_acceleration[3]) + " m/s) was below the limit (" + df.format(primingLimit) + " m/s)");
                 if (linear_acceleration[3] > PARAMETER_CASTING_ACCELERATION_LIMIT + PARAMETER_CASTING_ACCELERATION_THRESHOLD / 2) {
                     Arrays.fill(top_accelerations_cast, 0);
                     setCastMode(CAST_MODE_CASTING);
                     soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
                 } else {
+                    Log.w(TAG, "The acceleration (" + df.format(linear_acceleration[3]) + " m/s) was below the limit (" + df.format(primingLimit) + " m/s)");
                     setCastMode(CAST_MODE_IDLE);
                     soundPool.play(sound_idle, 1, 1, 0, 0, 1);
                     vibrator.vibrate(100);
@@ -699,5 +710,21 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         return fishEntryArray[7];
     }
 
+    public void hideView(View view) {
+        view.setVisibility(View.GONE);
+    }
+
+    public void nextTutorialStep(View view) {
+        if(currentTutorialStep == null) {
+            castingInstructionsViewLayout.setVisibility(View.VISIBLE);
+            currentTutorialStep = castingInstructionsViewLayout;
+        } else if(currentTutorialStep == castingInstructionsViewLayout) {
+            castingInstructionsViewLayout.setVisibility(View.GONE);
+            fishingInstructionsViewLayout.setVisibility(View.VISIBLE);
+            currentTutorialStep = fishingInstructionsViewLayout;
+        } else {
+            fishingInstructionsViewLayout.setVisibility(View.GONE);
+        }
+    }
 
 }
