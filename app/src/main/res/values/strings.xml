@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Fisk</string>
+    <string name="app_name">fisk</string>
     <string name="title_activity_fishing">fishing</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
@@ -15,7 +15,7 @@
     <string name="rotations">Current rotation\nx: %1$.1f, y: %2$.1f, z: %3$.1f</string>
     <string name="initializing_message">Initializing...</string>
     <string name="go_fish">START FISHING</string>
-    <string name="view_catch">VIEW CATCH</string>
+    <string name="view_catch">VIEW FISH</string>
     <string name="btn_cast">CAST</string>
     <string name="cast_line_to_start">Cast your line to start</string>
     <string name="catch_count">Total: %1$o</string>
