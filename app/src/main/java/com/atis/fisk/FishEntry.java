@@ -1,5 +1,7 @@
 package com.atis.fisk;
 
+import java.util.Random;
+
 public class FishEntry {
     private String name;
     private int resourceID;
@@ -22,4 +24,5 @@ public class FishEntry {
     public String getName(){
         return name;
     }
+
 }
