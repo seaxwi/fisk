@@ -107,12 +107,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             handler.postDelayed(this, delay);
         }
     };
-    Runnable fishWaiter;
+    Thread wait;
 
     /* Game states and variables */
     private boolean debugViewOpen = false;
     private boolean catchViewOpen = false;
-    private int castMode = CAST_MODE_IDLE;
+    private volatile int castMode = CAST_MODE_IDLE;
     private int reelMode = REEL_MODE_IDLE;
     private boolean reelEnabled = true;
     private int fishingMode = FISHING_MODE_IDLE;
@@ -121,11 +121,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double targetLength;
     private FishEntry[] fishEntryArray;
     private FishEntry activeFish = null;
-    private boolean fishIsHooked = false;
+    private long activeFishTimer;
 
     /* Reel variables */
-    private volatile float newReelSpin = 0;
-    private float currentReelSpin;
+    private volatile float nextReelSpin = 0;
+    private volatile float currentReelSpin;
     private int reelSoundId;
 
     @SuppressLint("ClickableViewAccessibility") // TODO: ?
@@ -261,9 +261,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private void tick() {
 
         if(castMode == CAST_MODE_THREAD) {
-
             // Wait for castMode to be changed by thread
-
         }
 
         if (castMode == CAST_MODE_IDLE) {
@@ -329,7 +327,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         if (castMode == CAST_MODE_AIRBORNE) {
 
             if (lineLength < targetLength) { // TODO: Better math
-                newReelSpin += 5;
+                nextReelSpin += 1;
             } else {
                 // Splash
                 setReelEnabled(true);
@@ -343,45 +341,53 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             setReelEnabled(true);
 
-            if (activeFish == null) {
+            if (newWaitThread()) {
+                Log.w(TAG, "Wait thread created...");
+            }
+        }
 
-                // Create thread and wait for castMode to change
-                setCastMode(CAST_MODE_THREAD);
-                new Thread(fishWaiter()).start();
+        // FISH STUFF
+        if (activeFish != null) {
+            nextReelSpin += 0.25;
+            activeFishTimer -= delay;
+            if (activeFishTimer < 0) {
+                Log.w(TAG, "Fish got away because you reeled in to slow!");
+                activeFish = null;
             }
         }
 
         // REEL STUFF
 
-        lineLength += (1.0 / fps) * newReelSpin;
+        if(reelMode == REEL_MODE_REELING) {
+            nextReelSpin -= 0.75;
+        }
 
-        if (newReelSpin != currentReelSpin) {
+        if (nextReelSpin != currentReelSpin) {
 
-            Log.w(TAG, "Reel spin: " + newReelSpin);
+            currentReelSpin = nextReelSpin;
+
+            Log.w(TAG, "Reel spin: " + currentReelSpin);
 
             soundPool.stop(reelSoundId);
 
-            if (newReelSpin > 0) {
-                reelSoundId = soundPool.play(sound_reel, 1, 1, 0, -1, 1);
-            } else if (newReelSpin < 0) {
-                reelSoundId = soundPool.play(sound_reel, 1, 1, 0, -1, 1);
+            float rate = Math.abs(nextReelSpin); // (-1.0) - 1.0
+
+            if (rate > 0) {
+                reelSoundId = soundPool.play(sound_reel, 1, 1, 0, -1, rate);
+            } else if (rate < 0) {
+                reelSoundId = soundPool.play(sound_reel, 1, 1, 0, -1, rate);
             }
-
-            currentReelSpin = newReelSpin;
         }
+        nextReelSpin = 0;
 
-        newReelSpin = 0;
-
-        if(reelMode == REEL_MODE_REELING) {
-            newReelSpin -= 2;
-        }
+        lineLength +=  currentReelSpin * 5 * (1.0 / fps);
 
         // LINE REELED IN
         if(lineLength < 0) {
             setCastMode(CAST_MODE_IDLE);
             // Reset line to 0
-            setReelMode(REEL_MODE_IDLE);
             lineLength = 0;
+            Log.w(TAG, "FX: Big splash");
             soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
 
             if (activeFish == null) {
@@ -402,11 +408,18 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         lineLengthView.setText(getString(R.string.line_length, lineLength));
     }
 
-    private Runnable fishWaiter() {
-        return new Runnable() {
+    private boolean newWaitThread() {
+
+        if (wait.isAlive()) {
+            return false;
+        }
+
+        setCastMode(CAST_MODE_THREAD);
+        wait = new Thread(new Runnable() {
             Random rd = new Random();
 
             public void run() {
+                SystemClock.sleep(1000);
                 long wait = Fishes.spawnTime() * 1000;
                 Log.w(TAG, "Fish will approach in " + (wait / 1000) + " seconds. Waiting...");
 
@@ -415,6 +428,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 long nextVibration = 3000;
                 float vibrationIntensity = 0.1f;
 
+                boolean onHook = false;
+
                 while (castMode == CAST_MODE_THREAD) {
 
                     if (wait > 1000) {
@@ -422,38 +437,50 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         // Start splashing
                         if (wait <= nextSplash) {
                             // NOTE: Could become negative
-                            nextSplash -= Math.round(500 + rd.nextFloat() * 1000); // 500-1500 ms
+                            nextSplash -= Math.round(1000 + rd.nextFloat() * 1000); // 1000-2000 ms
                             soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
                             Log.w(TAG, "FX: Splash!");
                         }
 
                         // Start vibrating
                         if (wait <= nextVibration) {
-                            long vibrationLength = Math.round((rd.nextFloat() * vibrationIntensity) * 1000 + 50);
+                            long vibrationLength = Math.round((rd.nextFloat() * vibrationIntensity) * 1000 + 10);
                             vibrator.vibrate(vibrationLength);
-                            nextVibration -= Math.round((rd.nextFloat() * vibrationIntensity) * 1000 + vibrationLength);
+                            nextVibration -= Math.round((1000 - (rd.nextFloat() * vibrationIntensity)) * 1000 + vibrationLength);
                             vibrationIntensity += 0.1f;
                         }
 
                         // Reset wait if reeling
-                        if (newReelSpin > 0) {
+                        if (nextReelSpin < 0) {
                             Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
                             SystemClock.sleep(1000); // Delay
                             setCastMode(CAST_MODE_FISHING);
                         }
-                    } else {
+
+                    } else if (wait > 0) {
                         // Player has to start reeling here or the fish will escape
-                        if (reelMode == REEL_MODE_THREAD) {
+                        if (!onHook) {
+                            Log.w(TAG, "Reel in now!");
+                            onHook = true;
+                            vibrator.vibrate(1000);
+                        }
+
+                        if (currentReelSpin < 0) {
                             activeFish = Fishes.determineCaughtFish(fishEntryArray);
+                            activeFishTimer = 1000;
                             setCastMode(CAST_MODE_FISHING);
                         }
+                    } else {
+                        Log.w(TAG, "You reeled in too late, the fish got away with the bait...");
+                        setCastMode(CAST_MODE_FISHING);
                     }
-
                     SystemClock.sleep(delay);
                     wait -= delay;
                 }
+                Log.w(TAG, "Wait thread died.");
             }
-        };
+        });
+        return true;
     }
 
     private void updateAccelerationViews() {
