@@ -115,12 +115,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private volatile int castMode = CAST_MODE_IDLE;
     private int reelMode = REEL_MODE_IDLE;
     private boolean reelEnabled = true;
-    private int fishingMode = FISHING_MODE_IDLE;
     private volatile double lineLength = 0;
     private double castVelocity;
     private double targetLength;
     private FishEntry[] fishEntryArray;
-    private FishEntry activeFish = null;
+    private Fish activeFish = null;
     private long activeFishTimer;
 
     /* Reel variables */
@@ -265,6 +264,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         }
 
         if (castMode == CAST_MODE_IDLE) {
+            reelMode = REEL_MODE_IDLE;
             setReelEnabled(false);
 
             if (rotZ > PARAMETER_PRIMING_ANGLE_UPPER) {
@@ -339,20 +339,13 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // TODO: Sensors could be paused while waiting for fish
         if(castMode == CAST_MODE_FISHING) {
 
-            setReelEnabled(true);
-
-            if (newWaitThread()) {
-                Log.w(TAG, "Wait thread created...");
-            }
-        }
-
-        // FISH STUFF
-        if (activeFish != null) {
-            nextReelSpin += 0.25;
-            activeFishTimer -= delay;
-            if (activeFishTimer < 0) {
-                Log.w(TAG, "Fish got away because you reeled in to slow!");
+            if(activeFish == null) {
+                activeFish = new Fish();
+            } else if (activeFish.escaped()) {
                 activeFish = null;
+            } else {
+                nextReelSpin += 0.25;
+                activeFish.tick(delay);
             }
         }
 
@@ -393,11 +386,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (activeFish == null) {
                 Log.w(TAG, "You didn't catch anything.");
             } else {
-                Log.w(TAG, "You caught a " + activeFish.getName() + "!");
+                FishEntry entry = Fishes.determineCaughtFish(fishEntryArray);
+                Log.w(TAG, "You caught a " + entry.getName() + "!");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    catchImage.setImageDrawable(getDrawable(activeFish.getResourceID()));
+                    catchImage.setImageDrawable(getDrawable(entry.getResourceID()));
                 }
-                catchName.setText(activeFish.getName());
+                catchName.setText(entry.getName());
                 setCatchViewVisibility(true);
                 // Release fish
                 activeFish = null;
@@ -406,81 +400,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // Update line length
         lineLengthView.setText(getString(R.string.line_length, lineLength));
-    }
-
-    private boolean newWaitThread() {
-
-        if (wait.isAlive()) {
-            return false;
-        }
-
-        setCastMode(CAST_MODE_THREAD);
-        wait = new Thread(new Runnable() {
-            Random rd = new Random();
-
-            public void run() {
-                SystemClock.sleep(1000);
-                long wait = Fishes.spawnTime() * 1000;
-                Log.w(TAG, "Fish will approach in " + (wait / 1000) + " seconds. Waiting...");
-
-                long nextSplash = 6000;
-
-                long nextVibration = 3000;
-                float vibrationIntensity = 0.1f;
-
-                boolean onHook = false;
-
-                while (castMode == CAST_MODE_THREAD) {
-
-                    if (wait > 1000) {
-
-                        // Start splashing
-                        if (wait <= nextSplash) {
-                            // NOTE: Could become negative
-                            nextSplash -= Math.round(1000 + rd.nextFloat() * 1000); // 1000-2000 ms
-                            soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                            Log.w(TAG, "FX: Splash!");
-                        }
-
-                        // Start vibrating
-                        if (wait <= nextVibration) {
-                            long vibrationLength = Math.round((rd.nextFloat() * vibrationIntensity) * 1000 + 10);
-                            vibrator.vibrate(vibrationLength);
-                            nextVibration -= Math.round((1000 - (rd.nextFloat() * vibrationIntensity)) * 1000 + vibrationLength);
-                            vibrationIntensity += 0.1f;
-                        }
-
-                        // Reset wait if reeling
-                        if (nextReelSpin < 0) {
-                            Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
-                            SystemClock.sleep(1000); // Delay
-                            setCastMode(CAST_MODE_FISHING);
-                        }
-
-                    } else if (wait > 0) {
-                        // Player has to start reeling here or the fish will escape
-                        if (!onHook) {
-                            Log.w(TAG, "Reel in now!");
-                            onHook = true;
-                            vibrator.vibrate(1000);
-                        }
-
-                        if (currentReelSpin < 0) {
-                            activeFish = Fishes.determineCaughtFish(fishEntryArray);
-                            activeFishTimer = 1000;
-                            setCastMode(CAST_MODE_FISHING);
-                        }
-                    } else {
-                        Log.w(TAG, "You reeled in too late, the fish got away with the bait...");
-                        setCastMode(CAST_MODE_FISHING);
-                    }
-                    SystemClock.sleep(delay);
-                    wait -= delay;
-                }
-                Log.w(TAG, "Wait thread died.");
-            }
-        });
-        return true;
     }
 
     private void updateAccelerationViews() {
@@ -574,28 +493,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         Log.w(TAG, "CAST_MODE: " + this.castMode + " -> " + castMode);
         this.castMode = castMode;
         castModeView.setText(getString(R.string.cast_mode, this.castMode));
-
-        // This should only be true when line just hit water
-        if(castMode == CAST_MODE_FISHING) {
-            fishingMode = FISHING_MODE_SPLASH;
-            Log.w(TAG, "+ FISHING_MODE: " + this.fishingMode + " -> " + fishingMode);
-        }
-    }
-
-    public void setFishingMode(int fishingMode) {
-        Log.w(TAG, "FISHING_MODE: " + this.fishingMode + " -> " + fishingMode);
-        this.fishingMode = fishingMode;
     }
 
     public void setReelMode(int reelMode) {
         // Log.w(TAG, "REEL_MODE: " + this.reedMode + " -> " + reedMode);
         this.reelMode = reelMode;
-        if(reelMode == REEL_MODE_REELING) {;
-            // setFishingMode(FISHING_MODE_NONE);
-        } else {
-            soundPool.stop(reelStreamId);
-            // setFishingMode(FISHING_MODE_IDLE);
-        }
     }
 
     public void setReelEnabled(boolean reelEnabled) {
@@ -696,4 +598,89 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         reelButton       = findViewById(R.id.btn_reel);
     }
+
+    private class Fish {
+        Random rd = new Random();
+
+        long nextSplash = 6000;
+        long nextVibration = 3000;
+        float vibrationIntensity = 0.1f;
+        long wait;
+        boolean escaped = false;
+        boolean startedEating = false;
+        boolean hooked = false;
+
+        public void Fish() {
+            wait = Fishes.spawnTime() * 1000;
+            Log.w(TAG, "Fish will approach in " + (wait / 1000) + " seconds.");
+        }
+
+        public boolean escaped() {
+            return escaped;
+        }
+
+        public void tick(long delay) {
+
+            if (!escaped) {
+
+                if(!hooked) {
+
+                    if (2000 <= wait && wait < 5000)
+                        // Start splashing
+                        if (wait <= nextSplash) {
+                            soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
+                            nextSplash -= Math.round(10000 + (rd.nextFloat() * 1000));
+                            Log.w(TAG, "FX: Splash!");
+                        }
+
+                    // Start vibrating
+                    if (1000 <= wait && wait < 2000) {
+                        long vibrationLength = Math.round(20);
+                        vibrator.vibrate(vibrationLength);
+                        nextVibration -= Math.round((200 - (vibrationIntensity * 200)));
+                        vibrationIntensity += 0.1f;
+                    }
+
+                    // Reset wait if reeling
+                    if (nextReelSpin < 0) {
+                        Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
+                        escaped = true;
+                    }
+
+                    // Bite
+                    if (0 <= wait && wait < 1000) {
+                        if (!startedEating) {
+                            startedEating = true;
+                            Log.w(TAG, "Reel in now!");
+                            vibrator.vibrate(1000);
+                        }
+
+                        if (currentReelSpin < 0) {
+                            Log.w(TAG, "Fish hooked!");
+                            hooked = true;
+                        }
+                    }
+
+                    if (wait < 0){
+                        Log.w(TAG, "You reeled in too late, the fish got away with the bait...");
+                        setCastMode(CAST_MODE_FISHING);
+                    }
+                    wait -= delay;
+                } else {
+
+                    if(wait < -1000) {
+
+                        escaped = true;
+                    }
+
+                    if (reelMode != REEL_MODE_REELING) {
+                        wait -= delay;
+                    }
+
+                }
+
+            }
+        }
+    }
+
 }
