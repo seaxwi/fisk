@@ -601,6 +601,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private class Fish {
         Random rd = new Random();
 
+        long vibrationLength = 100;
         long nextSplash = 10000;
         long nextVibration = 4000;
         float vibrationIntensity = 0.1f;
@@ -628,22 +629,17 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         // Start splashing
                         if (wait <= nextSplash) {
                             soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                            nextSplash -= Math.round(1500 - (rd.nextFloat() * 1000) );
+                            nextSplash -= Math.round(2500 - (rd.nextFloat() * 1000) );
                             Log.w(TAG, "FX: Splash!");
                         }
 
                     // Start vibrating
                     if (1000 <= wait && wait < 4000) {
-                        long vibrationLength = Math.round(50);
-                        vibrator.vibrate(vibrationLength);
-                        nextVibration -= Math.round((300 - (vibrationIntensity * 200)));
-                        vibrationIntensity += 0.1f;
-                    }
-
-                    // Reset wait if reeling
-                    if (nextReelSpin < 0) {
-                        Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
-                        escaped = true;
+                        if (wait <= nextVibration) {
+                            vibrator.vibrate(vibrationLength);
+                            nextVibration -= vibrationLength + 400;
+                            vibrationIntensity += 0.1f;
+                        }
                     }
 
                     // Bite
@@ -653,13 +649,20 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             Log.w(TAG, "Reel in now!");
                             vibrator.vibrate(1000);
                         }
+                    }
 
-                        if (currentReelSpin < 0) {
+                    // Reset wait if reeling
+                    if (nextReelSpin < 0) {
+                        if (startedEating) {
                             Log.w(TAG, "Fish hooked!");
                             hooked = true;
                             vibrator.cancel();
+                        } else {
+                            Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
+                            escaped = true;
                         }
                     }
+
 
                     if (wait < 0) {
                         Log.w(TAG, "You reeled in too late, the fish got away with the bait...");
@@ -669,7 +672,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 } else {
 
                     if(wait < -1000) {
-
+                        Log.w(TAG, "Fish got away!");
                         escaped = true;
                     }
 
