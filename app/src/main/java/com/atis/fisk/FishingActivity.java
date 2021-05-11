@@ -344,7 +344,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             } else if (activeFish.escaped()) {
                 activeFish = null;
             } else {
-                nextReelSpin += 0.25;
                 activeFish.tick(delay);
             }
         }
@@ -602,15 +601,15 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private class Fish {
         Random rd = new Random();
 
-        long nextSplash = 6000;
-        long nextVibration = 3000;
+        long nextSplash = 10000;
+        long nextVibration = 4000;
         float vibrationIntensity = 0.1f;
         long wait;
         boolean escaped = false;
         boolean startedEating = false;
         boolean hooked = false;
 
-        public void Fish() {
+        public Fish() {
             wait = Fishes.spawnTime() * 1000;
             Log.w(TAG, "Fish will approach in " + (wait / 1000) + " seconds.");
         }
@@ -625,19 +624,19 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                 if(!hooked) {
 
-                    if (2000 <= wait && wait < 5000)
+                    if (4000 <= wait && wait < 10000)
                         // Start splashing
                         if (wait <= nextSplash) {
                             soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                            nextSplash -= Math.round(10000 + (rd.nextFloat() * 1000));
+                            nextSplash -= Math.round(1500 - (rd.nextFloat() * 1000) );
                             Log.w(TAG, "FX: Splash!");
                         }
 
                     // Start vibrating
-                    if (1000 <= wait && wait < 2000) {
-                        long vibrationLength = Math.round(20);
+                    if (1000 <= wait && wait < 4000) {
+                        long vibrationLength = Math.round(50);
                         vibrator.vibrate(vibrationLength);
-                        nextVibration -= Math.round((200 - (vibrationIntensity * 200)));
+                        nextVibration -= Math.round((300 - (vibrationIntensity * 200)));
                         vibrationIntensity += 0.1f;
                     }
 
@@ -658,12 +657,13 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         if (currentReelSpin < 0) {
                             Log.w(TAG, "Fish hooked!");
                             hooked = true;
+                            vibrator.cancel();
                         }
                     }
 
-                    if (wait < 0){
+                    if (wait < 0) {
                         Log.w(TAG, "You reeled in too late, the fish got away with the bait...");
-                        setCastMode(CAST_MODE_FISHING);
+                        escaped = true;
                     }
                     wait -= delay;
                 } else {
@@ -676,7 +676,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                     if (reelMode != REEL_MODE_REELING) {
                         wait -= delay;
                     }
-
+                    nextReelSpin += 0.25;
                 }
 
             }
