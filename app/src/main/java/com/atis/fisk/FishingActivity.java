@@ -339,11 +339,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         // TODO: Sensors could be paused while waiting for fish
         if(castMode == CAST_MODE_FISHING) {
 
-            if(activeFish == null) {
+            if(activeFish == null || activeFish.escaped()) {
                 activeFish = new Fish();
-            } else if (activeFish.escaped()) {
-                activeFish = null;
             } else {
+                // Do one fish tick
                 activeFish.tick(delay);
             }
         }
@@ -382,9 +381,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             Log.w(TAG, "FX: Big splash");
             soundPool.play(sound_splash_big, 1, 1, 0, 0, 1);
 
-            if (activeFish == null) {
-                Log.w(TAG, "You didn't catch anything.");
-            } else {
+
+
+            if (activeFish.isHooked()) {
                 FishEntry entry = Fishes.determineCaughtFish(fishEntryArray);
                 Log.w(TAG, "You caught a " + entry.getName() + "!");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -394,6 +393,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 setCatchViewVisibility(true);
                 // Release fish
                 activeFish = null;
+            } else {
+                Log.w(TAG, "You didn't catch anything.");
             }
         }
 
@@ -604,19 +605,24 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         long vibrationLength = 100;
         long nextSplash = 10000;
         long nextVibration = 4000;
-        float vibrationIntensity = 0.1f;
+        float vibrationFactor = 1f;
         long wait;
         boolean escaped = false;
         boolean startedEating = false;
         boolean hooked = false;
+        int countdown;
 
         public Fish() {
             wait = Fishes.spawnTime() * 1000;
-            Log.w(TAG, "Fish will approach in " + (wait / 1000) + " seconds.");
+            countdown = (int) (wait / 1000);
         }
 
         public boolean escaped() {
             return escaped;
+        }
+
+        public boolean isHooked() {
+            return hooked;
         }
 
         public void tick(long delay) {
@@ -624,6 +630,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (!escaped) {
 
                 if(!hooked) {
+
+                    if (wait <= countdown * 1000) {
+                        Log.w(TAG, "Fish will approach in " + countdown + " seconds.");
+                        countdown--;
+                    }
 
                     if (4000 <= wait && wait < 10000)
                         // Start splashing
@@ -637,8 +648,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                     if (1000 <= wait && wait < 4000) {
                         if (wait <= nextVibration) {
                             vibrator.vibrate(vibrationLength);
-                            nextVibration -= vibrationLength + 400;
-                            vibrationIntensity += 0.1f;
+                            nextVibration -= vibrationLength + 1000 * vibrationFactor;
+                            vibrationFactor -= 0.2f;
                         }
                     }
 
@@ -652,19 +663,21 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                     }
 
                     // Reset wait if reeling
-                    if (nextReelSpin < 0) {
+                    if (reelMode == REEL_MODE_REELING) {
                         if (startedEating) {
                             Log.w(TAG, "Fish hooked!");
                             hooked = true;
                             vibrator.cancel();
                         } else {
-                            Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
+                            if (wait < 10000) {
+                                Log.w(TAG, "You reeled in too soon, the fish didn't bite...");
+                            }
                             escaped = true;
                         }
                     }
 
 
-                    if (wait < 0) {
+                    if (wait < 0 && !hooked) {
                         Log.w(TAG, "You reeled in too late, the fish got away with the bait...");
                         escaped = true;
                     }

@@ -8,7 +8,7 @@ public class Fishes {
 
     public static int spawnTime() {
         Random rd = new Random();
-        int seconds = (10 + rd.nextInt(20)); // 10-30 second wait
+        int seconds = (15 + rd.nextInt(15)); // 15-30 second wait
 
         return seconds;
     }
