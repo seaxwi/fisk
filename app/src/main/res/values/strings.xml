@@ -26,4 +26,6 @@
     <string name="line_not_cast">Line not cast</string>
     <string name="reel_in">REEL IN</string>
     <string name="cast_mode">CAST_MODE: %1$o</string>
+    <string name="popup_tip_casting">Hold the phone in your right hand pointing backward. Then swing it straight forward to cast your line.</string>
+    <string name="popup_tip_wait">Nice! Now wait for a fish to bite. Watch the float, observe sounds and vibrations. Don\'t reel in too soon or too late!</string>
 </resources>

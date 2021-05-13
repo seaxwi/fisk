@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -11,16 +12,19 @@ import android.hardware.SensorManager;
 import android.media.SoundPool;
 import android.os.Build;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.os.Vibrator;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import java.text.DecimalFormat;
@@ -64,12 +68,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private ImageView backgroundView;
     private ImageView instructionsView;
     private ImageView catchImage;
+    // private ImageView popupImage;
     private TextView catchName;
     private TextView xzyDebug;
     private TextView totalDebug;
     private TextView lineLengthView;
     private TextView rotationView;
     private TextView castModeView;
+    // private TextView popupText;
     private AnimationDrawable wavesAnimation;
     private AnimationDrawable instructionsAnimation;
     private Button reelButton;
@@ -189,7 +195,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         instructionsAnimation = (AnimationDrawable) instructionsView.getBackground();
         instructionsView.setImageDrawable(null); // Remove placeholder drawable
         instructionsAnimation.start();
-        nextTutorialStep(null);
+        // nextTutorialStep(null);
 
         /* Start background audio */
         bgSoundintent = new Intent(this, BackgroundSoundService.class);
@@ -201,6 +207,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // Wait for sensor to calibrate or something (TODO: Check if needed)
         // SystemClock.sleep(100);
+
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                onButtonShowPopupWindowClick(R.string.popup_tip_casting, R.drawable.instructions);
+            }
+        },100);
     }
 
     @Override
@@ -332,6 +346,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 // Splash
                 setReelEnabled(true);
                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
+                onButtonShowPopupWindowClick(R.string.popup_tip_wait, R.drawable.unknown_fish);
                 setCastMode(CAST_MODE_FISHING);
             }
         }
@@ -580,6 +595,47 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
+    public void onButtonShowPopupWindowClick(int message, int image) {
+
+        // inflate the layout of the popup window
+        LayoutInflater inflater = (LayoutInflater)
+                getSystemService(LAYOUT_INFLATER_SERVICE);
+        View popupView = inflater.inflate(R.layout.popup, null);
+
+        // create the popup window
+        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
+        int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+        boolean focusable = true; // lets taps outside the popup also dismiss it
+        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+
+        ConstraintLayout mainLayout = findViewById(R.id.main_layout);
+        popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
+
+        TextView popupText = popupWindow.getContentView().findViewById(R.id.popup_tip);
+        ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
+
+        Drawable drawable = getResources().getDrawable(image);
+        if(drawable instanceof AnimationDrawable){
+            popupDrawable.setBackground(drawable);
+            popupDrawable.setImageDrawable(null);
+            ((AnimationDrawable) popupDrawable.getBackground()).start();
+        } else {
+            popupDrawable.setImageDrawable(drawable);
+        }
+
+        popupText.setText(message);
+        // popupDrawable.setImageDrawable(drawable);
+
+        // dismiss the popup window when touched
+        popupView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                popupWindow.dismiss();
+                return true;
+            }
+        });
+    }
+
     private void initializeViews() {
         debugViewLayout               = findViewById(R.id.debug_values);
         catchViewLayout               = findViewById(R.id.fish_display_layout);
@@ -595,6 +651,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         castModeView     = (TextView) findViewById(R.id.cast_mode);
         catchImage       = (ImageView) findViewById(R.id.catch_image);
         catchName        = (TextView) findViewById(R.id.catch_name);
+        // popupText        = findViewById(R.id.popup_title);
+        // popupImage       = findViewById(R.id.popup_image);
 
         reelButton       = findViewById(R.id.btn_reel);
     }
