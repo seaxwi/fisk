@@ -103,6 +103,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double rotX, rotY, rotZ;
     private ArrayList<Double> delta = new ArrayList<Double>();
     private double velocity = 0;
+    private double castVelocity = 0;
 
     /* Tutorial */
     boolean displayWelcomeTip = true;
@@ -142,11 +143,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private int reelMode = REEL_MODE_IDLE;
     private boolean reelEnabled = true;
     private volatile double lineLength = 0;
-    private double castVelocity;
     private double targetLength;
     private FishEntry[] fishEntryArray;
     private Fish activeFish = null;
     private long activeFishTimer;
+    private boolean castDone;
 
     /* Reel variables */
     private volatile float nextReelSpin = 0;
@@ -341,7 +342,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             reelMode = REEL_MODE_IDLE;
             setReelEnabled(false);
 
-            
+            /* Velocity method */
+            if (velocity > 10) {
+                castVelocity = 10;
+                targetLength = 10;
+                castDone = false;
+                vibrator.vibrate(1000);
+                setCastMode(CAST_MODE_AIRBORNE);
+            }
+
+            /* Priming method
             if (rotZ > PARAMETER_PRIMING_ANGLE_UPPER) {
 
                 // Hide tutorial if visable
@@ -353,7 +363,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 soundPool.play(sound_prime, 1, 1, 0, 0, 1);
                 vibrator.vibrate(100);
 
-            }
+            } */
 
         }
 
@@ -387,6 +397,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         if (castMode == CAST_MODE_CASTING) {
 
+            /* Old
             // Wait until accleration drops below threshold
             if(linear_acceleration[3] < PARAMETER_CASTING_ACCELERATION_LIMIT) {
                 castVelocity = top_accelerations_cast[3]; // TODO: Better math
@@ -396,10 +407,30 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                 setReelEnabled(false);
                 setCastMode(CAST_MODE_AIRBORNE);
-            }
+            } */
         }
 
         if (castMode == CAST_MODE_AIRBORNE) {
+
+            /* New */
+
+
+            // Wait until velocity drops below threshold
+            if(!castDone) {
+                if (velocity < 9) {
+                    Log.w(TAG, "Succesful cast! Velocity: " + df.format(velocity) + "m/s");
+                    castDone = true;
+                    targetLength = castVelocity; // TODO: Better math
+                    setReelEnabled(false);
+                    // setCastMode(CAST_MODE_AIRBORNE);
+                } else {
+                    // Updates castVelocity
+                    if (velocity > castVelocity) {
+                        castVelocity = velocity;
+                        // Log.w(TAG, "castVelocity: " + castVelocity);
+                    }
+                }
+            }
 
             if (lineLength < targetLength) { // TODO: Better math
                 nextReelSpin += 1;
@@ -764,6 +795,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         long nextSplash = 10000;
         long nextVibration = 4000;
         float vibrationFactor = 1f;
+        long initWait;
         long wait;
         boolean escaped = false;
         boolean startedEating = false;
@@ -772,6 +804,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         public Fish() {
             wait = Fishes.spawnTime() * 1000;
+            initWait = wait;
             countdown = (int) (wait / 1000);
         }
 
@@ -803,7 +836,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         if (wait <= nextSplash) {
                             soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
                             // nextSplash -= Math.round(2500 - (rd.nextFloat() * 1000) );
-                            nextSplash = 0; // only one splash
+                            nextSplash = -10000; // only one splash
                             Log.w(TAG, "FX: Splash!");
                         }
 
@@ -851,6 +884,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                                 floatView.setVisibility(View.VISIBLE);
                                 escaped = true;
                             }
+                        } else if (initWait - wait > 1000) {
+                            Log.w(TAG, "You reeled in before a fish had time to approach...");
+                            escaped = true;
                         }
                     }
 
