@@ -739,7 +739,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private class Fish {
         Random rd = new Random();
 
-        long vibrationLength = 100;
+        long vibrationLength = 80; // Find shortest duration that works
         long nextSplash = 10000;
         long nextVibration = 4000;
         float vibrationFactor = 1f;
@@ -781,7 +781,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         // Start splashing
                         if (wait <= nextSplash) {
                             soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                            nextSplash -= Math.round(2500 - (rd.nextFloat() * 1000) );
+                            // nextSplash -= Math.round(2500 - (rd.nextFloat() * 1000) );
+                            nextSplash = 0; // Only one splash
                             Log.w(TAG, "FX: Splash!");
                         }
 
