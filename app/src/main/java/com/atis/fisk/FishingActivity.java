@@ -10,7 +10,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.SoundPool;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.support.constraint.ConstraintLayout;
@@ -21,7 +20,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
@@ -496,7 +494,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             if (activeFish.isHooked()) {
 
-                FishEntry entry = Fishes.determineCaughtFish(fishEntryArray);
+                FishEntry entry = Fishes.catchFish(activeFish.spawnDistance);
                 Log.w(TAG, "You caught a " + entry.getName() + "!");
 
                 /*
@@ -765,7 +763,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         }
                     });
                 } else {
-                    handler.postDelayed(this, delay);
+                    handler.post(this);
                 }
 
 
@@ -808,6 +806,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     private class Fish {
         Random rd = new Random();
+        double spawnDistance = lineLength;
 
         long vibrationLength = 80; // Find shortest duration that works
         long nextSplash = 10000;

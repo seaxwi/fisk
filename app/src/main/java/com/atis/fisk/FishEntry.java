@@ -6,6 +6,7 @@ public class FishEntry {
     private String name;
     private int resourceID;
     private int weight;
+    private int count;
 
     public FishEntry(String name, int resourceID, int weight){
         this.name = name;
@@ -23,6 +24,14 @@ public class FishEntry {
 
     public String getName(){
         return name;
+    }
+
+    public void increaseCount() {
+        count++;
+    }
+
+    public int getCount() {
+        return count;
     }
 
 }
