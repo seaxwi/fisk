@@ -76,6 +76,18 @@
         app:layout_constraintEnd_toEndOf="@+id/btn_reel"
         app:layout_constraintStart_toStartOf="@+id/btn_reel" />
 
+    <TextView
+        android:id="@+id/velocity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/line_not_cast"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/line_length"
+        app:layout_constraintEnd_toEndOf="@+id/line_length"
+        app:layout_constraintStart_toStartOf="@+id/line_length" />
+
     <android.support.constraint.ConstraintLayout
         android:id="@+id/fish_display_layout"
         android:layout_width="wrap_content"
@@ -293,6 +305,7 @@
                 app:layout_constraintStart_toStartOf="parent" />
 
         </android.support.constraint.ConstraintLayout>
+
     </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>

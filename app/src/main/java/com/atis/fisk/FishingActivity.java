@@ -28,6 +28,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -76,6 +77,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private TextView lineLengthView;
     private TextView rotationView;
     private TextView castModeView;
+    private TextView velocityView;
     // private TextView popupText;
     private AnimationDrawable wavesAnimation;
     private AnimationDrawable instructionsAnimation;
@@ -99,6 +101,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double[] top_accelerations_total; // debugging only
     private double[] top_accelerations_cast; // top casting acceleration
     private double rotX, rotY, rotZ;
+    private ArrayList<Double> delta = new ArrayList<Double>();
+    private double velocity = 0;
 
     /* Tutorial */
     boolean displayWelcomeTip = true;
@@ -318,6 +322,17 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             displayCastTip = true;
         }
 
+        /* Velocity */
+        double newV = linear_acceleration[3] * (delay / 1000.0);
+        delta.add(newV);
+        velocity += newV;
+        if(delta.size() > fps / 2) {
+            double oldV = delta.remove(0);
+            velocity -= oldV;
+        }
+        // TODO: Counteract drift?
+
+
         if(castMode == CAST_MODE_THREAD) {
             // Wait for castMode to be changed by thread
         }
@@ -326,6 +341,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             reelMode = REEL_MODE_IDLE;
             setReelEnabled(false);
 
+            
             if (rotZ > PARAMETER_PRIMING_ANGLE_UPPER) {
 
                 // Hide tutorial if visable
@@ -484,6 +500,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // Update line length
         lineLengthView.setText(getString(R.string.line_length, lineLength));
+
+        // Update velocity
+        velocityView.setText(getString(R.string.velocity, velocity));
     }
 
     private void updateAccelerationViews() {
@@ -731,6 +750,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         catchName        = (TextView) findViewById(R.id.catch_name);
         // popupText        = findViewById(R.id.popup_title);
         // popupImage       = findViewById(R.id.popup_image);
+        velocityView     = (TextView) findViewById(R.id.velocity);
+
         floatView = findViewById(R.id.float_animated);
 
         reelButton       = findViewById(R.id.btn_reel);
@@ -782,7 +803,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         if (wait <= nextSplash) {
                             soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
                             // nextSplash -= Math.round(2500 - (rd.nextFloat() * 1000) );
-                            nextSplash = 0; // Only one splash
+                            nextSplash = 0; // only one splash
                             Log.w(TAG, "FX: Splash!");
                         }
 
