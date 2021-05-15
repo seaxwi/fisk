@@ -5,7 +5,7 @@
     android:id="@+id/popup_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="64dp"
+    android:layout_margin="32dp"
     android:background="#D8FFFFFF"
     android:padding="8dp">
 

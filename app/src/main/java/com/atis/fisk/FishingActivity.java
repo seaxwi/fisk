@@ -61,6 +61,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private Vibrator vibrator;
 
     /* Declare views */
+    private ConstraintLayout mainLayout;
+    private ConstraintLayout UILayout;
     private ConstraintLayout debugViewLayout;
     private ConstraintLayout catchViewLayout;
     private ConstraintLayout castingInstructionsViewLayout;
@@ -78,11 +80,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private TextView rotationView;
     private TextView castModeView;
     private TextView velocityView;
+    private TextView reelInTip;
     // private TextView popupText;
     private AnimationDrawable wavesAnimation;
     private AnimationDrawable instructionsAnimation;
     private AnimationDrawable floatAnimation;
-    private Button reelButton;
+    // private Button reelButton;
 
     /* Sounds */
     SoundPool soundPool;
@@ -179,7 +182,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         sound_reel = soundPool.load(this, R.raw.reel, 1);
 
         /* Create REEL IN button */
-        reelButton.setOnTouchListener(new View.OnTouchListener() {
+        mainLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
@@ -642,13 +645,13 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (reelEnabled == true) {
                 Log.w(TAG, "Reel enabled.");
                 this.reelEnabled = reelEnabled;
-                reelButton.setEnabled(true);
-                reelButton.setAlpha(1f);
+                mainLayout.setEnabled(true);
+                reelInTip.setVisibility(View.VISIBLE);
             } else {
                 Log.w(TAG, "Reel disabled.");
                 this.reelEnabled = reelEnabled;
-                reelButton.setEnabled(false);
-                reelButton.setAlpha(0.5f); // TODO: Does not work, hides button completely
+                mainLayout.setEnabled(false);
+                reelInTip.setVisibility(View.GONE);
             }
         }
 
@@ -714,46 +717,58 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
-    public void popup(int title, int image, String message) {
+    public void popup(final int title, final int image, final String message) {
 
-        // inflate the layout of the popup window
-        LayoutInflater inflater = (LayoutInflater)
-                getSystemService(LAYOUT_INFLATER_SERVICE);
-        View popupView = inflater.inflate(R.layout.popup, null);
+        handler.post(new Runnable() {
+            public void run() {
+                if(!paused) {
+                    // inflate the layout of the popup window
+                    LayoutInflater inflater = (LayoutInflater)
+                            getSystemService(LAYOUT_INFLATER_SERVICE);
+                    View popupView = inflater.inflate(R.layout.popup, null);
 
-        // create the popup window
-        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
-        int height = LinearLayout.LayoutParams.WRAP_CONTENT;
-        boolean focusable = true; // lets taps outside the popup also dismiss it
-        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+                    // create the popup window
+                    int width = LinearLayout.LayoutParams.WRAP_CONTENT;
+                    int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+                    boolean focusable = true; // lets taps outside the popup also dismiss it
+                    final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
 
-        TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
-        TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
-        ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
+                    TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
+                    TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
+                    ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
 
-        popupTitle.setText(title);
-        Drawable drawable = getResources().getDrawable(image);
-        if(drawable instanceof AnimationDrawable){
-            popupDrawable.setBackground(drawable);
-            popupDrawable.setImageDrawable(null);
-            ((AnimationDrawable) popupDrawable.getBackground()).start();
-        } else {
-            popupDrawable.setImageDrawable(drawable);
-        }
-        popupMessage.setText(message);
+                    popupTitle.setText(title);
+                    Drawable drawable = getResources().getDrawable(image);
+                    if(drawable instanceof AnimationDrawable){
+                        popupDrawable.setBackground(drawable);
+                        popupDrawable.setImageDrawable(null);
+                        ((AnimationDrawable) popupDrawable.getBackground()).start();
+                    } else {
+                        popupDrawable.setImageDrawable(drawable);
+                    }
+                    popupMessage.setText(message);
 
-        ConstraintLayout mainLayout = findViewById(R.id.main_layout);
-        popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
+                    ConstraintLayout mainLayout = findViewById(R.id.main_layout);
+                    popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
 
-        paused = true;
+                    paused = true;
+                    UILayout.setVisibility(View.GONE);
 
-        // dismiss the popup window when touched
-        popupView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                popupWindow.dismiss();
-                paused = false;
-                return true;
+                    // dismiss the popup window when touched
+                    popupView.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            popupWindow.dismiss();
+                            UILayout.setVisibility(View.VISIBLE);
+                            paused = false;
+                            return true;
+                        }
+                    });
+                } else {
+                    handler.postDelayed(this, delay);
+                }
+
+
             }
         });
     }
@@ -765,6 +780,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     private void initializeViews() {
+        mainLayout                    = findViewById(R.id.main_layout);
+        UILayout                      = findViewById(R.id.UI_layout);
         debugViewLayout               = findViewById(R.id.debug_values);
         catchViewLayout               = findViewById(R.id.fish_display_layout);
         castingInstructionsViewLayout = findViewById(R.id.instructions_casting_layout);
@@ -779,13 +796,14 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         castModeView     = (TextView) findViewById(R.id.cast_mode);
         catchImage       = (ImageView) findViewById(R.id.catch_image);
         catchName        = (TextView) findViewById(R.id.catch_name);
+        reelInTip        = (TextView) findViewById(R.id.press_screen_to_reel_in);
         // popupText        = findViewById(R.id.popup_title);
         // popupImage       = findViewById(R.id.popup_image);
         velocityView     = (TextView) findViewById(R.id.velocity);
 
         floatView = findViewById(R.id.float_animated);
 
-        reelButton       = findViewById(R.id.btn_reel);
+        // reelButton       = findViewById(R.id.btn_reel);
     }
 
     private class Fish {
