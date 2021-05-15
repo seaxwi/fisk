@@ -442,7 +442,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 setReelEnabled(true);
                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
                 floatView.setVisibility(View.VISIBLE);
-                popup(R.string.how_to_play, R.drawable.unknown_fish, R.string.popup_tip_wait);
+                popup(R.string.how_to_play, R.drawable.phone_press, R.string.popup_tip_wait);
                 setCastMode(CAST_MODE_FISHING);
             }
         }
