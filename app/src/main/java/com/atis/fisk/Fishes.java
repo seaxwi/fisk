@@ -19,10 +19,6 @@ public class Fishes {
         return fishEntries;
     }
 
-    public static void setFishEntries(FishEntry[] fishEntries) {
-        Fishes.fishEntries = fishEntries;
-    }
-
     public static FishEntry[] createFishArray(){
         //create empty fishArray
         FishEntry[] fishEntryArray = {

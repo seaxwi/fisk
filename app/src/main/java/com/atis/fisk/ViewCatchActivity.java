@@ -21,13 +21,7 @@ public class ViewCatchActivity extends AppCompatActivity {
         int numberOfColumns = 2;
 
         // Disable vertical scroll
-        GridLayoutManager manager = new GridLayoutManager(this, numberOfColumns); /* {
-            @Override
-            public boolean canScrollVertically() {
-                //Similarly you can customize "canScrollHorizontally()" for managing horizontal scroll
-                return false;
-            }
-        }; */
+        GridLayoutManager manager = new GridLayoutManager(this, numberOfColumns);
 
         recyclerView.setLayoutManager(manager);
         adapter = new FiskRecyclerViewAdapter(this, Fishes.getFishEntries());
