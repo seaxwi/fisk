@@ -8,7 +8,8 @@
     tools:context=".MainActivity">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:id="@+id/linearLayout"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
@@ -34,20 +35,53 @@
             android:id="@+id/startButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:background="@drawable/button_background"
+            android:includeFontPadding="false"
             android:onClick="clickedStart"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:text="@string/go_fish"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/cardview_dark_background" />
 
         <Button
             android:id="@+id/catchButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:background="@drawable/button_background"
             android:clickable="false"
             android:onClick="clickedViewCatch"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:text="@string/view_catch"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/cardview_dark_background" />
 
     </LinearLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="138dp"
+            android:layout_height="39dp"
+            android:layout_marginBottom="24dp"
+            android:adjustViewBounds="true"
+            android:alpha="0.75"
+            android:baselineAlignBottom="false"
+            android:contentDescription="Atis AB logo."
+            android:cropToPadding="false"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:srcCompat="@drawable/atis_ab" />
+    </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>

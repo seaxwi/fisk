@@ -101,7 +101,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     boolean displayCastTip = false; // will be set to true after welcome tip is displayed
     boolean displayWaitTip = true;
     boolean displayCloseTip = true;
-    boolean displayReelInTip = true;
+    boolean displayReelInTip = false; // distracting
     boolean displayTooSoonTip = true;
     boolean displayTooLateTip = true;
     boolean displaySuccessTip = true;
@@ -420,7 +420,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 setReelEnabled(true);
                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
                 floatView.setVisibility(View.VISIBLE);
-                popup(R.string.how_to_play, R.drawable.phone_press, R.string.popup_tip_wait);
+                if(displayWaitTip) {
+                    popup(R.string.how_to_play, R.drawable.phone_press, R.string.popup_tip_wait);
+                }
                 setCastMode(CAST_MODE_FISHING);
             }
         }
@@ -464,6 +466,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // LINE REELED IN
         if(lineLength < 0) {
+            soundPool.stop(reelSoundId); // Make sure reelSound stops playing
             setCastMode(CAST_MODE_IDLE);
             // Reset line to 0
             lineLength = 0;
@@ -481,7 +484,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
 
                 if(displaySuccessTip) {
-                    popup(R.string.how_to_play, entry.getResourceID(), R.string.popup_tip_success);
+                    popup(R.string.how_to_play, R.drawable.ic_launcher_foreground, R.string.popup_tip_success);
 
                     // Disable hints
                     displayWelcomeTip = false;
