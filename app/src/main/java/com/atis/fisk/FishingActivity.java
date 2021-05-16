@@ -10,7 +10,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.SoundPool;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.support.constraint.ConstraintLayout;
@@ -21,13 +20,13 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -35,7 +34,6 @@ import java.util.Random;
 public class FishingActivity extends AppCompatActivity implements SensorEventListener {
     private static final String TAG = "FishingActivity";
 
-    private final double PARAMETER_PRIMING_ANGLE_UPPER = Math.toRadians(50);
     private final double PARAMETER_PRIMING_ANGLE_LOWER = Math.toRadians(40);
     private final float PARAMETER_CASTING_ACCELERATION_LIMIT = 30;
 
@@ -46,10 +44,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private static final int CAST_MODE_AIRBORNE = 3;
     private static final int CAST_MODE_FISHING = 4;
 
-    private static final int FISHING_MODE_IDLE = -1;
-    private static final int FISHING_MODE_SPLASH = 0;
-
-    private static final int REEL_MODE_THREAD = -1;
     private static final int REEL_MODE_IDLE = 0;
     private static final int REEL_MODE_REELING = 1;
 
@@ -60,6 +54,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private Vibrator vibrator;
 
     /* Declare views */
+    private ConstraintLayout mainLayout;
+    private ConstraintLayout UILayout;
     private ConstraintLayout debugViewLayout;
     private ConstraintLayout catchViewLayout;
     private ConstraintLayout castingInstructionsViewLayout;
@@ -67,20 +63,18 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private ConstraintLayout currentTutorialStep = null;
     private ImageView backgroundView;
     private ImageView instructionsView;
-    private ImageView catchImage;
     private ImageView floatView;
     // private ImageView popupImage;
-    private TextView catchName;
     private TextView xzyDebug;
     private TextView totalDebug;
     private TextView lineLengthView;
     private TextView rotationView;
     private TextView castModeView;
+    private TextView velocityView;
+    private TextView reelInTip;
     // private TextView popupText;
     private AnimationDrawable wavesAnimation;
     private AnimationDrawable instructionsAnimation;
-    private AnimationDrawable floatAnimation;
-    private Button reelButton;
 
     /* Sounds */
     SoundPool soundPool;
@@ -91,7 +85,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     int sound_prime;
     int sound_idle;
     int sound_reel;
-    int reelStreamId;
 
     /* Declare sensor variables */
     private double[] linear_acceleration;
@@ -99,6 +92,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private double[] top_accelerations_total; // debugging only
     private double[] top_accelerations_cast; // top casting acceleration
     private double rotX, rotY, rotZ;
+    private ArrayList<Double> delta = new ArrayList<Double>();
+    private double velocity = 0;
+    private double castVelocity = 0;
 
     /* Tutorial */
     boolean displayWelcomeTip = true;
@@ -129,20 +125,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             handler.postDelayed(this, delay);
         }
     };
-    Thread wait;
 
     /* Game states and variables */
     private boolean debugViewOpen = false;
-    private boolean catchViewOpen = false;
     private volatile int castMode = CAST_MODE_IDLE;
     private int reelMode = REEL_MODE_IDLE;
     private boolean reelEnabled = true;
     private volatile double lineLength = 0;
-    private double castVelocity;
     private double targetLength;
-    private FishEntry[] fishEntryArray;
     private Fish activeFish = null;
-    private long activeFishTimer;
+    private boolean castDone;
 
     /* Reel variables */
     private volatile float nextReelSpin = 0;
@@ -174,7 +166,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         sound_reel = soundPool.load(this, R.raw.reel, 1);
 
         /* Create REEL IN button */
-        reelButton.setOnTouchListener(new View.OnTouchListener() {
+        mainLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
@@ -205,7 +197,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         backgroundView.setImageDrawable(null); // Remove placeholder drawable
         wavesAnimation.start();
 
-        floatAnimation = (AnimationDrawable) floatView.getBackground();
         floatView.setBackgroundResource(R.drawable.float_animated);
         floatView.setImageDrawable(null);
         ((AnimationDrawable) floatView.getBackground()).start();
@@ -222,7 +213,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         startService(bgSoundintent);
 
         /* Other initialization */
-        fishEntryArray = Fishes.createFishArray();
         rd = new Random();
 
         // Wait for sensor to calibrate or something (TODO: Check if needed)
@@ -318,6 +308,17 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             displayCastTip = true;
         }
 
+        /* Velocity */
+        double newV = linear_acceleration[3] * (delay / 1000.0);
+        delta.add(newV);
+        velocity += newV;
+        if(delta.size() > fps / 2) {
+            double oldV = delta.remove(0);
+            velocity -= oldV;
+        }
+        // TODO: Counteract drift?
+
+
         if(castMode == CAST_MODE_THREAD) {
             // Wait for castMode to be changed by thread
         }
@@ -326,6 +327,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             reelMode = REEL_MODE_IDLE;
             setReelEnabled(false);
 
+            /* Velocity method */
+            if (velocity > 10) {
+                castVelocity = 10;
+                targetLength = 10;
+                castDone = false;
+                vibrator.vibrate(1000);
+                setCastMode(CAST_MODE_AIRBORNE);
+            }
+
+            /* Priming method
             if (rotZ > PARAMETER_PRIMING_ANGLE_UPPER) {
 
                 // Hide tutorial if visable
@@ -337,7 +348,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 soundPool.play(sound_prime, 1, 1, 0, 0, 1);
                 vibrator.vibrate(100);
 
-            }
+            } */
 
         }
 
@@ -371,6 +382,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         if (castMode == CAST_MODE_CASTING) {
 
+            /* Old
             // Wait until accleration drops below threshold
             if(linear_acceleration[3] < PARAMETER_CASTING_ACCELERATION_LIMIT) {
                 castVelocity = top_accelerations_cast[3]; // TODO: Better math
@@ -380,10 +392,26 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                 setReelEnabled(false);
                 setCastMode(CAST_MODE_AIRBORNE);
-            }
+            } */
         }
 
         if (castMode == CAST_MODE_AIRBORNE) {
+
+            // Wait until velocity drops below threshold
+            if(!castDone) {
+                if (velocity < 9) {
+                    Log.w(TAG, "Succesful cast! Velocity: " + df.format(velocity) + "m/s");
+                    castDone = true;
+                    targetLength = castVelocity; // TODO: Better math
+                    setReelEnabled(false);
+                    // setCastMode(CAST_MODE_AIRBORNE);
+                } else {
+                    // Updates castVelocity
+                    if (velocity > castVelocity) {
+                        castVelocity = velocity;
+                    }
+                }
+            }
 
             if (lineLength < targetLength) { // TODO: Better math
                 nextReelSpin += 1;
@@ -392,7 +420,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 setReelEnabled(true);
                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
                 floatView.setVisibility(View.VISIBLE);
-                popup(R.string.how_to_play, R.drawable.unknown_fish, R.string.popup_tip_wait);
+                popup(R.string.how_to_play, R.drawable.phone_press, R.string.popup_tip_wait);
                 setCastMode(CAST_MODE_FISHING);
             }
         }
@@ -446,16 +474,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             if (activeFish.isHooked()) {
 
-                FishEntry entry = Fishes.determineCaughtFish(fishEntryArray);
+                FishEntry entry = Fishes.catchFish(activeFish.spawnDistance);
                 Log.w(TAG, "You caught a " + entry.getName() + "!");
-
-                /*
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    catchImage.setImageDrawable(getDrawable(entry.getResourceID()));
-                }
-                catchName.setText(entry.getName());
-                setCatchViewVisibility(true);
-                */
 
                 popup(R.string.fish_was_caught, entry.getResourceID(), getString(R.string.caught_message, entry.getName()));
 
@@ -474,7 +494,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                     displaySuccessTip = false;
                 }
 
-
                 // Release fish
                 activeFish = null;
             } else {
@@ -484,6 +503,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // Update line length
         lineLengthView.setText(getString(R.string.line_length, lineLength));
+
+        // Update velocity
+        velocityView.setText(getString(R.string.velocity, velocity));
     }
 
     private void updateAccelerationViews() {
@@ -520,6 +542,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         linear_acceleration[0] = event.values[0];
         linear_acceleration[1] = event.values[1];
         linear_acceleration[2] = event.values[2];
+
         // Getting total magnitude sqrt(x^2 + y^2 + z^2)
         linear_acceleration[3] = Math.sqrt(Math.pow(linear_acceleration[0], 2)
                 + Math.pow(linear_acceleration[1], 2)
@@ -580,7 +603,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     public void setReelMode(int reelMode) {
-        // Log.w(TAG, "REEL_MODE: " + this.reedMode + " -> " + reedMode);
+
         this.reelMode = reelMode;
     }
 
@@ -592,20 +615,16 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (reelEnabled == true) {
                 Log.w(TAG, "Reel enabled.");
                 this.reelEnabled = reelEnabled;
-                reelButton.setEnabled(true);
-                reelButton.setAlpha(1f);
+                mainLayout.setEnabled(true);
+                reelInTip.setVisibility(View.VISIBLE);
             } else {
                 Log.w(TAG, "Reel disabled.");
                 this.reelEnabled = reelEnabled;
-                reelButton.setEnabled(false);
-                reelButton.setAlpha(0.5f); // TODO: Does not work, hides button completely
+                mainLayout.setEnabled(false);
+                reelInTip.setVisibility(View.GONE);
             }
         }
 
-    }
-
-    public void hideView(View view) {
-        view.setVisibility(View.GONE);
     }
 
     public void toggleDebug(View view) {
@@ -623,32 +642,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             // set GONE
             debugViewLayout.setVisibility(View.GONE);
             // set VISIBLE
-            // lineLengthView.setVisibility(View.VISIBLE);
             backgroundView.setVisibility(View.VISIBLE);
 
             startService(bgSoundintent);
         }
-    }
-
-    public void setCatchViewVisibility(boolean visible) {
-        catchViewOpen = visible;
-
-        if(catchViewOpen) {
-            // set VISIBLE
-            catchViewLayout.setVisibility(View.VISIBLE);
-
-            stopService(bgSoundintent);
-        } else {
-            // set GONE
-            catchViewLayout.setVisibility(View.GONE);
-
-            startService(bgSoundintent);
-        }
-    }
-
-    public void closeCatchView(View view) {
-
-        setCatchViewVisibility(false);
     }
 
     public void nextTutorialStep(View view) {
@@ -664,46 +661,58 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
-    public void popup(int title, int image, String message) {
+    public void popup(final int title, final int image, final String message) {
 
-        // inflate the layout of the popup window
-        LayoutInflater inflater = (LayoutInflater)
-                getSystemService(LAYOUT_INFLATER_SERVICE);
-        View popupView = inflater.inflate(R.layout.popup, null);
+        handler.post(new Runnable() {
+            public void run() {
+                if(!paused) {
+                    // inflate the layout of the popup window
+                    LayoutInflater inflater = (LayoutInflater)
+                            getSystemService(LAYOUT_INFLATER_SERVICE);
+                    View popupView = inflater.inflate(R.layout.popup, null);
 
-        // create the popup window
-        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
-        int height = LinearLayout.LayoutParams.WRAP_CONTENT;
-        boolean focusable = true; // lets taps outside the popup also dismiss it
-        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+                    // create the popup window
+                    int width = LinearLayout.LayoutParams.WRAP_CONTENT;
+                    int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+                    boolean focusable = true; // lets taps outside the popup also dismiss it
+                    final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
 
-        TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
-        TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
-        ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
+                    TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
+                    TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
+                    ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
 
-        popupTitle.setText(title);
-        Drawable drawable = getResources().getDrawable(image);
-        if(drawable instanceof AnimationDrawable){
-            popupDrawable.setBackground(drawable);
-            popupDrawable.setImageDrawable(null);
-            ((AnimationDrawable) popupDrawable.getBackground()).start();
-        } else {
-            popupDrawable.setImageDrawable(drawable);
-        }
-        popupMessage.setText(message);
+                    popupTitle.setText(title);
+                    Drawable drawable = getResources().getDrawable(image);
+                    if(drawable instanceof AnimationDrawable){
+                        popupDrawable.setBackground(drawable);
+                        popupDrawable.setImageDrawable(null);
+                        ((AnimationDrawable) popupDrawable.getBackground()).start();
+                    } else {
+                        popupDrawable.setImageDrawable(drawable);
+                    }
+                    popupMessage.setText(message);
 
-        ConstraintLayout mainLayout = findViewById(R.id.main_layout);
-        popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
+                    ConstraintLayout mainLayout = findViewById(R.id.main_layout);
+                    popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
 
-        paused = true;
+                    paused = true;
+                    UILayout.setVisibility(View.GONE);
 
-        // dismiss the popup window when touched
-        popupView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                popupWindow.dismiss();
-                paused = false;
-                return true;
+                    // dismiss the popup window when touched
+                    popupView.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            popupWindow.dismiss();
+                            UILayout.setVisibility(View.VISIBLE);
+                            paused = false;
+                            return true;
+                        }
+                    });
+                } else {
+                    handler.post(this);
+                }
+
+
             }
         });
     }
@@ -715,6 +724,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     private void initializeViews() {
+        mainLayout                    = findViewById(R.id.main_layout);
+        UILayout                      = findViewById(R.id.UI_layout);
         debugViewLayout               = findViewById(R.id.debug_values);
         catchViewLayout               = findViewById(R.id.fish_display_layout);
         castingInstructionsViewLayout = findViewById(R.id.instructions_casting_layout);
@@ -727,22 +738,20 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         totalDebug       = (TextView) findViewById(R.id.acc_values_total);
         rotationView     = (TextView) findViewById(R.id.rotation_value);
         castModeView     = (TextView) findViewById(R.id.cast_mode);
-        catchImage       = (ImageView) findViewById(R.id.catch_image);
-        catchName        = (TextView) findViewById(R.id.catch_name);
-        // popupText        = findViewById(R.id.popup_title);
-        // popupImage       = findViewById(R.id.popup_image);
-        floatView = findViewById(R.id.float_animated);
+        reelInTip        = (TextView) findViewById(R.id.press_screen_to_reel_in);
+        velocityView     = (TextView) findViewById(R.id.velocity);
 
-        reelButton       = findViewById(R.id.btn_reel);
+        floatView = findViewById(R.id.float_animated);
     }
 
     private class Fish {
-        Random rd = new Random();
+        double spawnDistance = lineLength;
 
-        long vibrationLength = 100;
+        long vibrationLength = 80; // Find shortest duration that works
         long nextSplash = 10000;
         long nextVibration = 4000;
         float vibrationFactor = 1f;
+        long initWait;
         long wait;
         boolean escaped = false;
         boolean startedEating = false;
@@ -751,6 +760,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         public Fish() {
             wait = Fishes.spawnTime() * 1000;
+            initWait = wait;
             countdown = (int) (wait / 1000);
         }
 
@@ -781,7 +791,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         // Start splashing
                         if (wait <= nextSplash) {
                             soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                            nextSplash -= Math.round(2500 - (rd.nextFloat() * 1000) );
+                            nextSplash = -10000; // only one splash
                             Log.w(TAG, "FX: Splash!");
                         }
 
@@ -799,6 +809,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         if(displayReelInTip) {
                             popup(R.string.how_to_play, R.drawable.unknown_fish, R.string.popup_tip_now);
                             displayReelInTip = false;
+                            
                         // Making sure that the tip is displayed before vibration starts
                         } else {
                             if (!startedEating) {
@@ -829,6 +840,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                                 floatView.setVisibility(View.VISIBLE);
                                 escaped = true;
                             }
+                        } else if (initWait - wait > 1000) {
+                            Log.w(TAG, "You reeled in before a fish had time to approach...");
+                            escaped = true;
                         }
                     }
 
