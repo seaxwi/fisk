@@ -36,7 +36,7 @@
     <string name="how_to_play">How to play</string>
     <string name="caught_message">You caught a %1$s</string>
     <string name="popup_tip_welcome">Welcome to fisk! This tutorial will guide you to your first catch!</string>
-    <string name="popup_tip_success">You\'ve caught your first fish! Well done!</string>
+    <string name="popup_tip_success">You\'ve caught your first fish and completed this tutorial! Well done!</string>
     <string name="press_screen_to_reel_in">PRESS SCREEN TO REEL IN</string>
     <string name="undiscovered_fish">Undiscovered fish</string>
     <string name="caught_init">Not yet caught.</string>
