@@ -19,11 +19,10 @@ public class BackgroundSoundService extends Service {
         super.onCreate();
         mediaPlayer = MediaPlayer.create(this, R.raw.ocean_waves_trimmed);
         mediaPlayer.setLooping(true); // Set looping
-        mediaPlayer.setVolume(100, 100);
+        mediaPlayer.setVolume(25, 25);
     }
     public int onStartCommand(Intent intent, int flags, int startId) {
         mediaPlayer.start();
-        //Toast.makeText(getApplicationContext(), "Playing",    Toast.LENGTH_SHORT).show();
         return startId;
     }
     public void onStart(Intent intent, int startId) {
