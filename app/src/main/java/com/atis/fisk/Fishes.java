@@ -19,6 +19,20 @@ public class Fishes {
         return fishEntries;
     }
 
+    public static int nTotal() {
+        return fishEntries.length;
+    }
+
+    public static int nCaught() {
+        int count = 0;
+        for(FishEntry f: fishEntries) {
+            if(f.getCount() > 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public static FishEntry[] createFishArray(){
         //create empty fishArray
         FishEntry[] fishEntryArray = {

@@ -11,7 +11,9 @@
         android:screenOrientation="nosensor"
         android:theme="@style/AppTheme.NoActionBar">
         <activity
+            android:parentActivityName=".MainActivity"
             android:name=".ViewCatchActivity"
+            android:theme="@style/AppTheme.View"
             android:screenOrientation="nosensor"/>
         <activity
             android:name=".FishingActivity"

@@ -46,4 +46,5 @@
     <string name="caught_number">Caught: %1$o</string>
     <string name="caught_fish">Caught fish</string>
     <string name="popup_disable">Disable tutorial</string>
+    <string name="discover_progress">Catalog (%1$o/%2$o discovered)</string>
 </resources>
