@@ -8,10 +8,17 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:screenOrientation="nosensor"
         android:theme="@style/AppTheme.NoActionBar">
-        <activity android:name=".ViewCatchActivity"></activity>
-        <activity android:name=".FishingActivity" />
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".ViewCatchActivity"
+            android:screenOrientation="nosensor"/>
+        <activity
+            android:name=".FishingActivity"
+            android:screenOrientation="nosensor" />
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="nosensor" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
