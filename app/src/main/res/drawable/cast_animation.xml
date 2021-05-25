@@ -3,6 +3,6 @@
     android:id="@+id/selected" android:oneshot="false">
 
     <item android:drawable="@drawable/test_man" android:duration="600" />
-    <item android:drawable="@drawable/straight_man_cropped" android:duration="600" />
+    <item android:drawable="@drawable/man_cast" android:duration="600" />
 
 </animation-list>

@@ -282,7 +282,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         if (displayWelcomeTip) {
             popup(
                     new PopupData(R.string.how_to_play, R.drawable.ic_launcher_foreground, R.string.popup_tip_welcome),
-                    new PopupData(R.string.how_to_play, R.drawable.instructions, R.string.popup_tip_casting)
+                    new PopupData(R.string.how_to_play, R.drawable.cast_animation, R.string.popup_tip_casting)
             );
             displayWelcomeTip = false;
             displayCastTip = false;
@@ -377,7 +377,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (lineTension > 0) {
                 soundPool.stop(lineSoundId);
                 lineSoundId = soundPool.play(sound_line_tension, 1, 1, 0, 0, 1);
-                long[] pattern = {100, 50};
+                long[] pattern = {100, 100};
                 vibrator.vibrate(pattern, 0);
             } else {
                 soundPool.stop(lineSoundId);
@@ -407,7 +407,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 soundPool.stop(lineSoundId);
                 soundPool.play(sound_line_break, 1, 1, 0, 0, 1);
                 vibrator.cancel();
-                popup(new PopupData(R.string.how_to_play, R.drawable.instructions, R.string.popup_tip_snap));
+                popup(
+                        new PopupData(R.string.how_to_play, R.drawable.line_snap, R.string.popup_tip_snap),
+                        new PopupData(R.string.how_to_play, R.drawable.pull_animation_2, R.string.popup_tip_pull)
+                        );
                 activeFish = null;
                 lineLengthPullAdd = 0;
                 lineLength = -1;
@@ -784,7 +787,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                         if(displayCloseTip) {
                             popup(
                                 new PopupData(R.string.how_to_play, R.drawable.unknown_fish, R.string.popup_tip_close),
-                                new PopupData(R.string.how_to_play, R.drawable.instructions, R.string.popup_tip_pull)
+                                new PopupData(R.string.how_to_play, R.drawable.man_reel_simple, R.string.popup_tip_reel),
+                                new PopupData(R.string.how_to_play, R.drawable.pull_animation_2, R.string.popup_tip_pull),
+                                new PopupData(R.string.how_to_play, R.drawable.pull_animation_3, R.string.popup_tip_repeat)
                             );
                             displayCloseTip = false;
                         }
