@@ -51,31 +51,18 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
-            android:id="@+id/debug_button"
+            android:id="@+id/help_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginRight="16dp"
-            android:onClick="toggleDebug"
-            android:src="@android:drawable/ic_menu_info_details"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/press_screen_to_reel_in"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:alpha="0.5"
-            android:text="@string/press_screen_to_reel_in"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginBottom="16dp"
+            android:alpha="0.8"
+            android:onClick="viewCurrentTutorial"
+            android:src="@android:drawable/ic_menu_help"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             tools:visibility="visible" />
 
         <TextView
@@ -224,7 +211,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="#E6FFFFFF"
-            android:onClick="nextTutorialStep"
+            android:onClick="viewCurrentTutorial"
             android:padding="16dp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -276,7 +263,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="#E6FFFFFF"
-            android:onClick="nextTutorialStep"
+            android:onClick="viewCurrentTutorial"
             android:padding="16dp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"

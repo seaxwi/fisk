@@ -34,6 +34,7 @@
     <string name="popup_tip_too_soon_close">You reeled in too soon, the fish didn\'t bite!</string>
     <string name="popup_tip_too_soon_far">You\'re reeling in too soon! Wait for a fish to approach.</string>
     <string name="popup_tip_too_late">You were too late to reel in! Reel in when you feel the line tugging and see the float go under.</string>
+    <string name="popup_tip_pull">When the fish is hooked, reel in until you feel tension in the line. Then pull back to create slack, and continue to reel.</string>
     <string name="popup_tip_snap">The line snapped! When you sense tension in the line, pull the rod back to create slack, then keep reeling.</string>
     <string name="how_to_play">How to play</string>
     <string name="caught_message">You caught a %1$s</string>
