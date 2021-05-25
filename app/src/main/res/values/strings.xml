@@ -37,7 +37,7 @@
     <string name="popup_tip_pull">When the fish is hooked, reel in until you feel tension in the line. Then pull back to create slack, and continue to reel.</string>
     <string name="popup_tip_snap">The line snapped! When you sense tension in the line, pull the rod back to create slack, then keep reeling.</string>
     <string name="how_to_play">How to play</string>
-    <string name="caught_message">You caught a %1$s</string>
+    <string name="caught_message">You caught a %1$s.</string>
     <string name="popup_tip_welcome">Welcome to fisk! This tutorial will guide you to your first catch!</string>
     <string name="popup_tip_success">You\'ve got your first catch and completed this tutorial! Well done!</string>
     <string name="press_screen_to_reel_in">PRESS SCREEN TO REEL IN</string>

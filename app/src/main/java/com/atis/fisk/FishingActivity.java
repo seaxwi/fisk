@@ -93,7 +93,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     boolean displayTooSoonTip;
     boolean displayTooLateTip;
     boolean displaySuccessTip;
-    PopupData[] lastPopup;
+    PopupData[] previousPopup;
 
     // Other
     private DecimalFormat df = new DecimalFormat("#.#"); // debug
@@ -109,9 +109,12 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         public void run() {
             if(!paused) {
                 tick();
+                handler.postDelayed(this, delay);
+            } else {
+                handler.post(this);
             }
 
-            handler.postDelayed(this, delay);
+
         }
     };
 
@@ -374,7 +377,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (lineTension > 0) {
                 soundPool.stop(lineSoundId);
                 lineSoundId = soundPool.play(sound_line_tension, 1, 1, 0, 0, 1);
-                long[] pattern = {100, (long) (1000 * lineTension)};
+                long[] pattern = {100, 50};
                 vibrator.vibrate(pattern, 0);
             } else {
                 soundPool.stop(lineSoundId);
@@ -617,8 +620,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         helpButton.setVisibility(View.GONE);
     }
 
-    public void viewCurrentTutorial(View view) {
-        popup(lastPopup);
+    public void viewPreviousPopup(View view) {
+        popup(previousPopup);
     }
 
     public void finishActivity(View view) {
@@ -628,73 +631,80 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     public void popup(final PopupData... popupData) {
 
-        lastPopup = popupData;
+        paused = true;
+        popup(0, null, popupData);
 
-        for(int i = 0; i < popupData.length; i++) {
+    }
 
-            final PopupData pd = popupData[i];
-            final boolean last = (i == popupData.length - 1);
+    public void popup(final int i, final PopupWindow prevPopupWindow, final PopupData... popupData) {
 
-            handler.post(new Runnable() {
-                public void run() {
-
-                    if(!paused) {
-                        // inflate the layout of the popup window
-                        LayoutInflater inflater = (LayoutInflater)
-                                getSystemService(LAYOUT_INFLATER_SERVICE);
-                        View popupView = inflater.inflate(R.layout.popup, null);
-
-                        // create the popup window
-                        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
-                        int height = LinearLayout.LayoutParams.WRAP_CONTENT;
-                        boolean focusable = false; // disables ability to tap outside the popup to dismiss
-                        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
-
-                        TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
-                        TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
-                        ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
-                        Button okButton = popupWindow.getContentView().findViewById(R.id.popup_button);
-
-                        popupTitle.setText(pd.title);
-                        Drawable drawable = getResources().getDrawable(pd.image);
-                        if(drawable instanceof AnimationDrawable){
-                            popupDrawable.setBackground(drawable);
-                            popupDrawable.setImageDrawable(null);
-                            ((AnimationDrawable) popupDrawable.getBackground()).start();
-                        } else {
-                            popupDrawable.setImageDrawable(drawable);
-                        }
-                        popupMessage.setText(pd.message);
-                        if(!last) {
-                            okButton.setText(R.string.next);
-                        }
-
-                        ConstraintLayout mainLayout = findViewById(R.id.main_layout);
-                        popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
-
-                        soundPool.pause(reelSoundId);
-                        paused = true;
-                        UILayout.setVisibility(View.GONE);
-
-                        // dismiss the popup window when touched
-                        okButton.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                popupWindow.dismiss();
-                                UILayout.setVisibility(View.VISIBLE);
-                                soundPool.resume(reelSoundId);
-                                paused = false;
-                            }
-                        });
-                    } else {
-                        handler.post(this);
-                    }
-
-
-                }
-            });
-
+        if (i == 0) {
+            previousPopup = popupData;
         }
+
+        final PopupData pd = popupData[i];
+        final boolean last = (i == popupData.length - 1);
+
+        handler.post(new Runnable() {
+            public void run() {
+
+                // inflate the layout of the popup window
+                LayoutInflater inflater = (LayoutInflater)
+                 getSystemService(LAYOUT_INFLATER_SERVICE);
+                View popupView = inflater.inflate(R.layout.popup, null);
+
+                // create the popup window
+                int width = LinearLayout.LayoutParams.WRAP_CONTENT;
+                int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+                boolean focusable = false; // disables ability to tap outside the popup to dismiss
+                final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+
+                TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
+                TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
+                ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
+                Button okButton = popupWindow.getContentView().findViewById(R.id.popup_button);
+
+                popupTitle.setText(pd.title);
+                Drawable drawable = getResources().getDrawable(pd.image);
+                if (drawable instanceof AnimationDrawable) {
+                    popupDrawable.setBackground(drawable);
+                    popupDrawable.setImageDrawable(null);
+                    ((AnimationDrawable) popupDrawable.getBackground()).start();
+                } else {
+                    popupDrawable.setImageDrawable(drawable);
+                }
+                popupMessage.setText(pd.message);
+                if (!last) {
+                    okButton.setText(R.string.next);
+                }
+
+                ConstraintLayout mainLayout = findViewById(R.id.main_layout);
+
+                if(prevPopupWindow != null) {
+                    prevPopupWindow.dismiss();
+                }
+                popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
+
+                soundPool.pause(reelSoundId);
+                UILayout.setVisibility(View.GONE);
+
+                // dismiss the popup window when touched
+                okButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                        if (last) {
+                            UILayout.setVisibility(View.VISIBLE);
+                            soundPool.resume(reelSoundId);
+                            popupWindow.dismiss();
+                            paused = false;
+                        } else {
+                            popup((i + 1), popupWindow, popupData);
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private void initializeViews() {
