@@ -19,7 +19,7 @@ public class BackgroundSoundService extends Service {
         super.onCreate();
         mediaPlayer = MediaPlayer.create(this, R.raw.ocean_waves_trimmed);
         mediaPlayer.setLooping(true); // Set looping
-        mediaPlayer.setVolume(25, 25);
+        mediaPlayer.setVolume(0.7f, 0.7f);
     }
     public int onStartCommand(Intent intent, int flags, int startId) {
         mediaPlayer.start();

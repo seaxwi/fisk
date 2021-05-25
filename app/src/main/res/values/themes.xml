@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="AppTheme.NoActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowFullscreen">true</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -12,12 +12,21 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="AppTheme.View">
-        <item name="android:windowFullscreen">false</item>
+    <style name="AppTheme.View" parent="Theme.AppCompat.Light">
+        <item name="android:windowFullscreen">true</item>
         <item name="windowActionBar">true</item>
         <item name="windowNoTitle">false</item>
+        <item name="android:actionBarStyle">@style/FiskActionBar</item>
     </style>
 
+    <style name="FiskActionBar" parent="android:Widget.Holo.Light.ActionBar.Solid.Inverse">
+        <item name="background">@color/cardview_light_background</item>
+        <item name="android:titleTextStyle">@style/FiskActionBarTitle</item>
+    </style>
+
+    <style name="FiskActionBarTitle" parent="android:TextAppearance.Holo.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/colorFiskBlue</item>
+    </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
