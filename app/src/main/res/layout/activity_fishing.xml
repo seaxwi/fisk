@@ -50,6 +50,25 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <ImageButton
+            android:id="@+id/close_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:alpha="0.75"
+            android:background="@drawable/button_background"
+            android:onClick="finishActivity"
+            android:scaleX="1.25"
+            android:scaleY="1.25"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="#4A4A4A"
+            android:visibility="visible"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
         <android.support.constraint.ConstraintLayout
             android:id="@+id/UI_bottom_bar"
             android:layout_width="match_parent"
@@ -63,11 +82,15 @@
                 android:id="@+id/help_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginLeft="16dp"
-                android:alpha="0.8"
+                android:layout_marginStart="20dp"
+                android:layout_marginLeft="20dp"
+                android:alpha="0.75"
+                android:background="@drawable/button_background"
                 android:onClick="viewCurrentTutorial"
+                android:scaleX="1.25"
+                android:scaleY="1.25"
                 android:src="@android:drawable/ic_menu_help"
+                android:tint="#4A4A4A"
                 android:visibility="visible"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -79,9 +102,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif"
-                android:text="@string/line_not_cast"
+                android:text="@string/initializing_message"
                 android:textColor="#FFFFFF"
-                android:textSize="40dp"
+                android:textSize="36sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
@@ -102,8 +125,7 @@
         android:padding="8dp"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="visible">
+        app:layout_constraintTop_toTopOf="parent">
 
         <Button
             android:id="@+id/btn_reset"

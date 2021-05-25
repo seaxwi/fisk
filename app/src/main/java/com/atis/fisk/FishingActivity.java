@@ -617,6 +617,11 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         popup(lastPopup);
     }
 
+    public void finishActivity(View view) {
+        Log.w(TAG, "Activity finished.");
+        finish();
+    }
+
     public void popup(final PopupData... popupData) {
 
         lastPopup = popupData;
