@@ -98,6 +98,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     // Other
     private DecimalFormat df = new DecimalFormat("#.#"); // debug
     private Intent bgSoundintent;
+    private Intent waitingSoundintent;
 
     /* Game loop */
     private boolean paused = false;
@@ -215,6 +216,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         /* Start background audio */
         bgSoundintent = new Intent(this, BackgroundSoundService.class);
         startService(bgSoundintent);
+
+        waitingSoundintent = new Intent(this, WaitingSoundService.class);
     }
 
     @Override
@@ -239,6 +242,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         soundPool.autoPause();
         vibrator.cancel();
         stopService(bgSoundintent);
+        stopService(waitingSoundintent);
 
         /* Pause game loop */
         handler.removeCallbacks(game);
