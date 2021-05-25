@@ -15,7 +15,7 @@
     <string name="rotations">Current rotation\nx: %1$.1f, y: %2$.1f, z: %3$.1f</string>
     <string name="initializing_message">Initializing...</string>
     <string name="go_fish">START FISHING</string>
-    <string name="view_catch">VIEW FISH</string>
+    <string name="view_catch">VIEW CATALOG</string>
     <string name="btn_cast">CAST</string>
     <string name="cast_line_to_start">Cast your line to start</string>
     <string name="catch_count">Total: %1$o</string>
@@ -39,10 +39,11 @@
     <string name="how_to_play">How to play</string>
     <string name="caught_message">You caught a %1$s</string>
     <string name="popup_tip_welcome">Welcome to fisk! This tutorial will guide you to your first catch!</string>
-    <string name="popup_tip_success">You\'ve caught your first fish and completed this tutorial! Well done!</string>
+    <string name="popup_tip_success">You\'ve got your first catch and completed this tutorial! Well done!</string>
     <string name="press_screen_to_reel_in">PRESS SCREEN TO REEL IN</string>
     <string name="undiscovered_fish">Undiscovered</string>
     <string name="caught_init">Not yet caught.</string>
     <string name="caught_number">Caught: %1$o</string>
     <string name="caught_fish">Caught fish</string>
+    <string name="popup_disable">Disable tutorial</string>
 </resources>
