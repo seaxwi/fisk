@@ -74,8 +74,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     int sound_reel;
     int sound_line_tension;
     int sound_line_break;
-    int sound_success;
-    int sound_failure;
 
     /* Declare sensor variables */
     private double[] linear_acceleration;
@@ -182,8 +180,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         sound_reel = soundPool.load(this, R.raw.reel, 1);
         sound_line_tension = soundPool.load(this, R.raw.rod_tension, 1);
         sound_line_break = soundPool.load(this, R.raw.rod_snap, 1);
-        sound_failure = soundPool.load(this, R.raw.failure, 1);
-        sound_success = soundPool.load(this, R.raw.success, 1);
 
         /* Create REEL IN button */
         mainLayout.setOnTouchListener(new View.OnTouchListener() {
@@ -192,8 +188,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                 // TODO: Hmmm
                 if(reelEnabled) {
-                    stopService(waitingSoundintent);
-                    startService(bgSoundintent);
+
                     if (event.getAction() == MotionEvent.ACTION_DOWN) {
                         lineLengthReelAdd = 0.75f;
                         setReelMode(REEL_MODE_REELING);
@@ -363,8 +358,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
         // TODO: Sensors could be paused while waiting for fish
         if(castMode == CAST_MODE_FISHING) {
-            stopService(bgSoundintent);
-            startService(waitingSoundintent);
+
             if(activeFish == null || activeFish.escaped()) {
                 activeFish = new Fish();
             } else {
@@ -377,17 +371,15 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         float sum = lineLengthCastAdd - lineLengthReelAdd + lineLengthPullAdd;
         // REEL STUFF
         if (sum != currentReelSpin) {
+
             lineTension = Math.min(
                     (lineLengthCastAdd + lineLengthPullAdd),
                     lineLengthReelAdd);
 
             Log.w(TAG, "ReelSpin: " + currentReelSpin + " -> " + sum + " (" + lineTension + ")");
 
-            stopService(waitingSoundintent);
-            startService(bgSoundintent);
             if (lineTension > 0) {
                 soundPool.stop(lineSoundId);
-
                 lineSoundId = soundPool.play(sound_line_tension, 1, 1, 0, 0, 1);
                 long[] pattern = {100, 100};
                 vibrator.vibrate(pattern, 0);
@@ -403,15 +395,10 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             float rate = Math.abs(currentReelSpin); // (-1.0) - 1.0
 
-
             if (rate > 0) {
                 reelSoundId = soundPool.play(sound_reel, 1, 1, 0, -1, rate);
-                stopService(waitingSoundintent);
-                startService(bgSoundintent);
             } else if (rate < 0) {
                 reelSoundId = soundPool.play(sound_reel, 1, 1, 0, -1, rate);
-                stopService(waitingSoundintent);
-                startService(bgSoundintent);
             }
         }
 
@@ -451,10 +438,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
 
             if (activeFish != null && activeFish.isHooked()) {
-                FishEntry entry = Fishes.catchFish(activeFish.spawnDistance);
-                soundPool.play(sound_success, 1, 1, 0, 0, 1);
-                Log.w(TAG, "You caught a " + entry.getName() + "!");
 
+                FishEntry entry = Fishes.catchFish(activeFish.spawnDistance);
+                Log.w(TAG, "You caught a " + entry.getName() + "!");
 
                 if(displaySuccessTip) {
                     popup(
@@ -469,9 +455,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 // Release fish
                 activeFish = null;
             } else {
-                soundPool.play(sound_failure, 1, 1, 0, 0, 1);
                 Log.w(TAG, "You didn't catch anything.");
-
             }
         }
 
@@ -845,7 +829,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             if (!startedEating) {
                                 startedEating = true;
                                 floatView.setVisibility(View.GONE);
-                                stopService(waitingSoundintent);
                                 Log.w(TAG, "Reel in now!");
                                 vibrator.vibrate(2000);
                             }
@@ -855,6 +838,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                     // Reset wait if reeling
                     if (reelMode == REEL_MODE_REELING) {
+
 
                         if (startedEating) {
 
@@ -892,8 +876,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
                 } else {
                     // IF HOOKED
-                    stopService(waitingSoundintent);
-                    startService(bgSoundintent);
+
                     if(wait < -2000) {
                         if(displayTooLateTip) {
                             popup(new PopupData(R.string.how_to_play, R.drawable.unknown_fish, R.string.popup_tip_too_late));
