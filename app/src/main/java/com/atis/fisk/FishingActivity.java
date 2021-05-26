@@ -21,6 +21,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -95,7 +96,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     boolean displayTooSoonTip;
     boolean displayTooLateTip;
     boolean displaySuccessTip;
-    PopupData[] previousPopup;
+    PopupData[] previousPopupData;
 
     // Other
     private DecimalFormat df = new DecimalFormat("#.#"); // debug
@@ -139,6 +140,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     private volatile float currentReelSpin;
     private int reelSoundId;
     private int lineSoundId;
+
+    /* Popup Window */
+    private PopupWindow popupWindow;
 
     @SuppressLint("ClickableViewAccessibility") // TODO: ?
     @Override
@@ -309,9 +313,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             setReelEnabled(false);
 
             /* Velocity method */
-            if (velocity > 10) {
-                castVelocity = 10;
-                targetLength = 10;
+            if (velocity > 8) {
+                castVelocity = 8;
+                targetLength = 8;
 
                 // Start the cast
                 Log.w(TAG, "Starting cast...");
@@ -640,7 +644,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     }
 
     public void viewPreviousPopup(View view) {
-        popup(previousPopup);
+        popup(previousPopupData);
     }
 
     public void finishActivity(View view) {
@@ -650,78 +654,89 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
     public void popup(final PopupData... popupData) {
 
-        paused = true;
-        popup(0, null, popupData);
+        popup(0, popupData);
 
     }
 
-    public void popup(final int i, final PopupWindow prevPopupWindow, final PopupData... popupData) {
+    public void popup(final int i, final PopupData... popupData) {
+        Log.w(TAG, "Popup opened.");
 
         if (i == 0) {
-            previousPopup = popupData;
+            previousPopupData = popupData;
+            paused = true;
         }
 
         final PopupData pd = popupData[i];
         final boolean last = (i == popupData.length - 1);
 
-        handler.post(new Runnable() {
-            public void run() {
+        // Initialize popup window if null
+        if (popupWindow == null) {
+            // inflate the layout of the popup window
+            LayoutInflater inflater =
+                    (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+            View popupView = inflater.inflate(R.layout.popup, (ViewGroup) findViewById(R.id.main_layout), false);
 
-                // inflate the layout of the popup window
-                LayoutInflater inflater = (LayoutInflater)
-                 getSystemService(LAYOUT_INFLATER_SERVICE);
-                View popupView = inflater.inflate(R.layout.popup, null);
+            // create the popup window
+            int width = LinearLayout.LayoutParams.MATCH_PARENT;
+            int height = LinearLayout.LayoutParams.MATCH_PARENT;
+            boolean focusable = false; // disables ability to tap outside the popup to dismiss
+            popupWindow = new PopupWindow(popupView, width, height, focusable);
+        }
 
-                // create the popup window
-                int width = LinearLayout.LayoutParams.WRAP_CONTENT;
-                int height = LinearLayout.LayoutParams.WRAP_CONTENT;
-                boolean focusable = false; // disables ability to tap outside the popup to dismiss
-                final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+        TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
+        TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
+        ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
+        Button popupButton = popupWindow.getContentView().findViewById(R.id.popup_button);
 
-                TextView popupTitle = popupWindow.getContentView().findViewById(R.id.popup_title);
-                TextView popupMessage = popupWindow.getContentView().findViewById(R.id.popup_tip);
-                ImageView popupDrawable = popupWindow.getContentView().findViewById(R.id.popup_image);
-                Button okButton = popupWindow.getContentView().findViewById(R.id.popup_button);
+        popupTitle.setText(pd.title);
+        Drawable drawable = getResources().getDrawable(pd.image);
 
-                popupTitle.setText(pd.title);
-                Drawable drawable = getResources().getDrawable(pd.image);
-                if (drawable instanceof AnimationDrawable) {
-                    popupDrawable.setBackground(drawable);
-                    popupDrawable.setImageDrawable(null);
-                    ((AnimationDrawable) popupDrawable.getBackground()).start();
+        // Remove any current drawables
+        popupDrawable.setBackground(null);
+        popupDrawable.setImageDrawable(null);
+
+        if (drawable instanceof AnimationDrawable) {
+            popupDrawable.setBackground(drawable);
+            popupDrawable.setImageDrawable(null);
+            ((AnimationDrawable) popupDrawable.getBackground()).start();
+        } else {
+            popupDrawable.setImageDrawable(drawable);
+        }
+        popupMessage.setText(pd.message);
+
+        if (last) {
+            popupButton.setText(R.string.ok);
+        } else {
+            popupButton.setText(R.string.next);
+        }
+
+        ConstraintLayout mainLayout = findViewById(R.id.main_layout);
+
+        // if(prevPopupWindow != null) {
+        //     prevPopupWindow.dismiss();
+        // }
+
+        if(i == 0) {
+            popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
+            soundPool.pause(reelSoundId);
+            UILayout.setVisibility(View.GONE);
+        }
+
+        // dismiss the popup window when touched
+        popupButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (last) {
+                    // resume game
+                    UILayout.setVisibility(View.VISIBLE);
+                    soundPool.resume(reelSoundId);
+                    popupWindow.dismiss();
+                    paused = false;
                 } else {
-                    popupDrawable.setImageDrawable(drawable);
+                    // next popup
+                    popup((i + 1), popupData);
                 }
-                popupMessage.setText(pd.message);
-                if (!last) {
-                    okButton.setText(R.string.next);
-                }
-
-                ConstraintLayout mainLayout = findViewById(R.id.main_layout);
-
-                if(prevPopupWindow != null) {
-                    prevPopupWindow.dismiss();
-                }
-                popupWindow.showAtLocation(mainLayout, Gravity.CENTER, 0, 0);
-
-                soundPool.pause(reelSoundId);
-                UILayout.setVisibility(View.GONE);
-
-                // dismiss the popup window when touched
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-
-                        if (last) {
-                            UILayout.setVisibility(View.VISIBLE);
-                            soundPool.resume(reelSoundId);
-                            popupWindow.dismiss();
-                            paused = false;
-                        } else {
-                            popup((i + 1), popupWindow, popupData);
-                        }
-                    }
-                });
             }
         });
     }
@@ -809,12 +824,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             );
                             displayCloseTip = false;
                         }
-                        // Start splashing
-                        if (wait <= nextSplash) {
-                            soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                            nextSplash = -10000; // only one splash
-                            Log.w(TAG, "FX: Splash!");
-                        }
 
                     // Start vibrating
                     if (1000 <= wait && wait < 4000) {
@@ -901,7 +910,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             stunTime -= delay;
                         } else {
 
-                            if (velocity > 8) {
+                            if (velocity > 4) {
                                 vibrator.vibrate(100);
                                 soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
                                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);

@@ -27,8 +27,8 @@
             android:adjustViewBounds="true"
             android:contentDescription="Fisk logo."
             android:cropToPadding="false"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
             app:srcCompat="@drawable/fisk_logo_raster" />
 
         <Button
