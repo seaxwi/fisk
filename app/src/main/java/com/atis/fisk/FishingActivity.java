@@ -799,12 +799,6 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             );
                             displayCloseTip = false;
                         }
-                        // Start splashing
-                        if (wait <= nextSplash) {
-                            soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
-                            nextSplash = -10000; // only one splash
-                            Log.w(TAG, "FX: Splash!");
-                        }
 
                     // Start vibrating
                     if (1000 <= wait && wait < 4000) {
