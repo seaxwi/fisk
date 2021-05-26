@@ -308,9 +308,9 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             setReelEnabled(false);
 
             /* Velocity method */
-            if (velocity > 10) {
-                castVelocity = 10;
-                targetLength = 10;
+            if (velocity > 8) {
+                castVelocity = 8;
+                targetLength = 8;
 
                 // Start the cast
                 Log.w(TAG, "Starting cast...");
@@ -890,7 +890,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                             stunTime -= delay;
                         } else {
 
-                            if (velocity > 8) {
+                            if (velocity > 4) {
                                 vibrator.vibrate(100);
                                 soundPool.play(sound_swosh, 1, 1, 0, 0, 1);
                                 soundPool.play(sound_splash_small, 1, 1, 0, 0, 1);
