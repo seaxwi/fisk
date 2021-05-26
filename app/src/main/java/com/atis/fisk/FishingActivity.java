@@ -73,6 +73,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
     int sound_reel;
     int sound_line_tension;
     int sound_line_break;
+    int sound_success;
+    int sound_failure;
 
     /* Declare sensor variables */
     private double[] linear_acceleration;
@@ -176,6 +178,8 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
         sound_reel = soundPool.load(this, R.raw.reel, 1);
         sound_line_tension = soundPool.load(this, R.raw.rod_tension, 1);
         sound_line_break = soundPool.load(this, R.raw.rod_snap, 1);
+        sound_failure = soundPool.load(this, R.raw.failure, 1);
+        sound_success = soundPool.load(this, R.raw.success, 1);
 
         /* Create REEL IN button */
         mainLayout.setOnTouchListener(new View.OnTouchListener() {
@@ -436,6 +440,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
             if (activeFish != null && activeFish.isHooked()) {
 
                 FishEntry entry = Fishes.catchFish(activeFish.spawnDistance);
+                soundPool.play(sound_success, 1, 1, 0, 0, 1);
                 Log.w(TAG, "You caught a " + entry.getName() + "!");
 
                 if(displaySuccessTip) {
@@ -451,6 +456,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
                 // Release fish
                 activeFish = null;
             } else {
+                soundPool.play(sound_failure, 1, 1, 0, 0, 1);
                 Log.w(TAG, "You didn't catch anything.");
             }
         }
