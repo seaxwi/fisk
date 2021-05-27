@@ -327,7 +327,7 @@ public class FishingActivity extends AppCompatActivity implements SensorEventLis
 
             if(!castDone) {
                 // Wait until velocity drops below threshold
-                if (velocity < 9) {
+                if (velocity < 7) {
                     Log.w(TAG, "Successful cast! Velocity: " + df.format(velocity) + "m/s");
                     castDone = true;
                     targetLength = castVelocity; // TODO: Better math
